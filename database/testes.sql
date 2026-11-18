@@ -34,13 +34,13 @@ INSERT INTO setor (id, nome) VALUES
   ('00000000-0000-0000-0000-0000000000a1', 'Recepção'),
   ('00000000-0000-0000-0000-0000000000a2', 'Laboratório de Balística'),
   ('00000000-0000-0000-0000-0000000000a3', 'Depósito');
-INSERT INTO usuario (id, nome, matricula, email, senha_hash, papel, setor_id) VALUES
+INSERT INTO usuario (id, nome, matricula, email, senha_hash, perfil, setor_id) VALUES
   ('00000000-0000-0000-0000-0000000000b1', 'Ana Ribeiro',    '1001', 'ana@ic.gov.br',    '$2b$12$abcdefghijklmnopqrstuv', 'administrador', '00000000-0000-0000-0000-0000000000a1'),
   ('00000000-0000-0000-0000-0000000000b2', 'Rafael Souza',   '2014', 'rafael@ic.gov.br', '$2b$12$abcdefghijklmnopqrstuv', 'perito',        '00000000-0000-0000-0000-0000000000a1'),
   ('00000000-0000-0000-0000-0000000000b3', 'Júlia Farias',   '3120', 'julia@ic.gov.br',  '$2b$12$abcdefghijklmnopqrstuv', 'normal',        '00000000-0000-0000-0000-0000000000a2'),
   ('00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes', '2031', 'carlos@ic.gov.br', '$2b$12$abcdefghijklmnopqrstuv', 'perito',        '00000000-0000-0000-0000-0000000000a2');
 
--- A partir daqui, tudo roda com o papel da API.
+-- A partir daqui, tudo roda com o perfil da API.
 SET ROLE custodia_app;
 
 -- ---------------------------------------------------------------- usuários e setores
@@ -54,87 +54,87 @@ SELECT pg_temp.espera_erro($$INSERT INTO setor (nome) VALUES ('recepção ')$$, 
 SELECT pg_temp.espera_erro($$SELECT gerar_lote_lacres(10, '00000000-0000-0000-0000-0000000000b2')$$,
   'Só administradores', 'perito não gera lote (RF04)');
 SELECT pg_temp.ok(gerar_lote_lacres(10, '00000000-0000-0000-0000-0000000000b1') IS NOT NULL, 'administrador gera lote de 10');
-SELECT pg_temp.ok((SELECT count(*) = 10 AND bool_and(status = 'disponivel' AND evidencia_id IS NULL) FROM lacre), 'lacres nascem disponíveis e sem evidência (RF04b)');
-SELECT pg_temp.ok((SELECT min(numero) FROM lacre) = 'IC-' || to_char(now(), 'YYYY') || '-000001', 'numeração gerada pelo banco (RNF05)');
-SELECT pg_temp.espera_erro($$INSERT INTO lacre (numero, emissor, lote_id) SELECT 'IC-X', 'instituto', NULL$$,
+SELECT pg_temp.ok((SELECT count(*) = 10 AND bool_and(situacao = 'disponivel' AND evidencia_id IS NULL) FROM lacre), 'lacres nascem disponíveis e sem evidência (RF04b)');
+SELECT pg_temp.ok((SELECT min(numero_lacre) FROM lacre) = 'IC-' || to_char(now(), 'YYYY') || '-000001', 'numeração gerada pelo banco (RNF05)');
+SELECT pg_temp.espera_erro($$INSERT INTO lacre (numero_lacre, emissor, lote_id) SELECT 'IC-X', 'instituto', NULL$$,
   'lacre_lote_so_instituto', 'lacre do Instituto sem lote é recusado (RF04d)');
 SELECT pg_temp.espera_erro($$DELETE FROM lacre$$, 'permission denied', 'API não apaga lacres');
 
 -- ---------------------------------------------------------------- ocorrência
-INSERT INTO ocorrencia (id, codigo_gigante_ssp, delegacia_origem, tipo_crime, data_hora, criada_por)
+INSERT INTO ocorrencia (id, codigo_gigante, delegacia_origem, tipo_crime, data_hora_ocorrencia, criada_por_id)
 VALUES ('00000000-0000-0000-0000-0000000000c1', 'GIG-2026-004417', '1º DIP', 'homicidio', '2026-11-10 21:00-04', '00000000-0000-0000-0000-0000000000b2');
-INSERT INTO ocorrencia_bo (ocorrencia_id, numero_bo, adicionado_por)
+INSERT INTO ocorrencia_bo (ocorrencia_id, numero_bo, adicionado_por_id)
 VALUES ('00000000-0000-0000-0000-0000000000c1', 'BO 2026/118.332', '00000000-0000-0000-0000-0000000000b2');
-SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (codigo_gigante_ssp, criada_por) VALUES ('gig-2026-004417', '00000000-0000-0000-0000-0000000000b2')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (codigo_gigante, criada_por_id) VALUES ('gig-2026-004417', '00000000-0000-0000-0000-0000000000b2')$$,
   'ocorrencia_gigante_uk', 'código GIGANTE repetido é recusado (RF02c)');
-SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (criada_por) VALUES ('00000000-0000-0000-0000-0000000000b2')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (criada_por_id) VALUES ('00000000-0000-0000-0000-0000000000b2')$$,
   'ocorrencia_nao_vazia', 'ocorrência vazia é recusada (RF02e)');
 
 -- ---------------------------------------------------------------- evidência + coleta
-INSERT INTO evidencia (id, codigo, tipo, descricao, endereco_encontrada, latitude_encontrada, longitude_encontrada, ocorrencia_id,
-                       foto_url, foto_nome_original, foto_mime, foto_tamanho_bytes, foto_hash_sha256, coletado_por)
+INSERT INTO evidencia (id, codigo, tipo_evidencia, descricao, endereco_coleta, latitude_coleta, longitude_coleta, ocorrencia_id,
+                       foto_caminho_arquivo, foto_nome_arquivo, foto_tipo_arquivo, foto_tamanho_bytes, foto_hash_sha256, coletado_por_id)
 VALUES ('00000000-0000-0000-0000-0000000000e1', 'EV-2026-0001', 'projetil_municao', 'Projétil deformado',
         'Rua Tapajós, 214, Manaus', -3.130000, -60.023000, '00000000-0000-0000-0000-0000000000c1',
         's3://evidencias/e1.jpg', 'projetil.jpg', 'image/jpeg', 482113, encode(sha256('foto'::bytea), 'hex'),
         '00000000-0000-0000-0000-0000000000b2');
 
-SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, local, fora_do_local)
+SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, endereco_local, cadastro_fora_do_local)
   VALUES ('00000000-0000-0000-0000-0000000000e1', 'coletado', '00000000-0000-0000-0000-0000000000b2', 'Rafael Souza', 'Rua Tapajós, 214', true)$$,
   'cadeia_justificativa', 'cadastro fora do local exige justificativa (RF02b)');
 
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, local, fora_do_local,
-                             localizacao_obtida, latitude, longitude, precisao_m,
-                             sequencia, hash_anterior, hash_registro, data_hora)  -- valores falsos: devem ser ignorados
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, endereco_local, cadastro_fora_do_local,
+                             gps_obtido, gps_latitude, gps_longitude, gps_precisao_metros,
+                             numero_sequencia, hash_registro_anterior, hash_registro, data_hora_registro)  -- valores falsos: devem ser ignorados
 VALUES ('00000000-0000-0000-0000-0000000000e1', 'coletado', '00000000-0000-0000-0000-0000000000b2', 'Rafael Souza',
         'Rua Tapajós, 214, Manaus', false, true, -3.130010, -60.023020, 8.5,
         99, repeat('f', 64), repeat('f', 64), '2000-01-01');
-SELECT pg_temp.ok((SELECT sequencia = 1 AND hash_anterior = repeat('0', 64) AND hash_registro <> repeat('f', 64)
-                          AND data_hora > now() - interval '1 minute' FROM cadeia_custodia),
+SELECT pg_temp.ok((SELECT numero_sequencia = 1 AND hash_registro_anterior = repeat('0', 64) AND hash_registro <> repeat('f', 64)
+                          AND data_hora_registro > now() - interval '1 minute' FROM cadeia_custodia),
                   'sequência, hashes e hora vêm do banco, não do cliente (RNF04, RNF-S1)');
 
 -- Associação do lacre IC-...-000001 (RF05, RF05b)
-UPDATE lacre SET status = 'vinculado', evidencia_id = '00000000-0000-0000-0000-0000000000e1',
-       vinculado_por = '00000000-0000-0000-0000-0000000000b2', vinculado_em = now(),
-       hash_no_momento_associacao = encode(sha256('foto'::bytea), 'hex')
- WHERE numero LIKE '%-000001';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, lacre_id)
+UPDATE lacre SET situacao = 'vinculado', evidencia_id = '00000000-0000-0000-0000-0000000000e1',
+       vinculado_por_id = '00000000-0000-0000-0000-0000000000b2', vinculado_em = now(),
+       hash_foto_na_associacao = encode(sha256('foto'::bytea), 'hex')
+ WHERE numero_lacre LIKE '%-000001';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, lacre_id)
 SELECT '00000000-0000-0000-0000-0000000000e1', 'lacre_associado', '00000000-0000-0000-0000-0000000000b2', 'Rafael Souza', id
-  FROM lacre WHERE numero LIKE '%-000001';
+  FROM lacre WHERE numero_lacre LIKE '%-000001';
 
 -- Segunda evidência tenta usar o mesmo lacre (RF05c)
-INSERT INTO evidencia (id, codigo, tipo, descricao, endereco_encontrada, foto_url, foto_nome_original, foto_mime, foto_tamanho_bytes, foto_hash_sha256, coletado_por)
+INSERT INTO evidencia (id, codigo, tipo_evidencia, descricao, endereco_coleta, foto_caminho_arquivo, foto_nome_arquivo, foto_tipo_arquivo, foto_tamanho_bytes, foto_hash_sha256, coletado_por_id)
 VALUES ('00000000-0000-0000-0000-0000000000e2', 'EV-2026-0002', 'arma_branca', 'Faca', 'Av. Constantino Nery, 1500',
         's3://evidencias/e2.jpg', 'faca.jpg', 'image/jpeg', 100, encode(sha256('faca'::bytea), 'hex'), '00000000-0000-0000-0000-0000000000b2');
-SELECT pg_temp.espera_erro($$UPDATE lacre SET evidencia_id = '00000000-0000-0000-0000-0000000000e2' WHERE numero LIKE '%-000001'$$,
+SELECT pg_temp.espera_erro($$UPDATE lacre SET evidencia_id = '00000000-0000-0000-0000-0000000000e2' WHERE numero_lacre LIKE '%-000001'$$,
   'já está vinculado', 'lacre vinculado não passa para outra evidência (RF05c)');
-SELECT pg_temp.espera_erro($$UPDATE lacre SET status = 'vinculado', evidencia_id = '00000000-0000-0000-0000-0000000000e1', vinculado_por = '00000000-0000-0000-0000-0000000000b2', vinculado_em = now(), hash_no_momento_associacao = repeat('a', 64) WHERE numero LIKE '%-000002'$$,
+SELECT pg_temp.espera_erro($$UPDATE lacre SET situacao = 'vinculado', evidencia_id = '00000000-0000-0000-0000-0000000000e1', vinculado_por_id = '00000000-0000-0000-0000-0000000000b2', vinculado_em = now(), hash_foto_na_associacao = repeat('a', 64) WHERE numero_lacre LIKE '%-000002'$$,
   'lacre_um_ativo_por_evidencia', 'evidência não tem dois lacres ativos');
 
 -- Lacre externo como lacre principal (RF05d) e número repetido (RF05e)
-INSERT INTO lacre (numero, emissor, registrado_por, status, evidencia_id, vinculado_por, vinculado_em, hash_no_momento_associacao)
+INSERT INTO lacre (numero_lacre, emissor, cadastrado_por_id, situacao, evidencia_id, vinculado_por_id, vinculado_em, hash_foto_na_associacao)
 VALUES ('SSP-88231', 'ssp', '00000000-0000-0000-0000-0000000000b2', 'vinculado', '00000000-0000-0000-0000-0000000000e2',
         '00000000-0000-0000-0000-0000000000b2', now(), encode(sha256('faca'::bytea), 'hex'));
-SELECT pg_temp.espera_erro($$INSERT INTO lacre (numero, emissor, registrado_por) VALUES ('ssp-88231', 'fabricante', '00000000-0000-0000-0000-0000000000b2')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO lacre (numero_lacre, emissor, cadastrado_por_id) VALUES ('ssp-88231', 'fabricante', '00000000-0000-0000-0000-0000000000b2')$$,
   'lacre_numero_uk', 'número de lacre externo não se repete (RF05e)');
 
 -- Referência a lacre externo ligada ao lacre do Instituto (RF04e)
-INSERT INTO lacre_referencia_externa (lacre_id, emissor, numero_externo, associado_por)
-SELECT id, 'tribunal_justica', 'TJAM-554', '00000000-0000-0000-0000-0000000000b2' FROM lacre WHERE numero LIKE '%-000001';
-SELECT pg_temp.espera_erro($$INSERT INTO lacre_referencia_externa (lacre_id, emissor, numero_externo, associado_por) SELECT id, 'instituto', 'X', '00000000-0000-0000-0000-0000000000b2' FROM lacre WHERE numero LIKE '%-000001'$$,
+INSERT INTO lacre_referencia_externa (lacre_id, emissor, numero_lacre_externo, associado_por_id)
+SELECT id, 'tribunal_justica', 'TJAM-554', '00000000-0000-0000-0000-0000000000b2' FROM lacre WHERE numero_lacre LIKE '%-000001';
+SELECT pg_temp.espera_erro($$INSERT INTO lacre_referencia_externa (lacre_id, emissor, numero_lacre_externo, associado_por_id) SELECT id, 'instituto', 'X', '00000000-0000-0000-0000-0000000000b2' FROM lacre WHERE numero_lacre LIKE '%-000001'$$,
   'check constraint', 'referência externa não pode ser do Instituto');
 
 -- ---------------------------------------------------------------- encaminhamento e recebimento
-UPDATE evidencia SET status = 'em_transito', setor_pendente_id = '00000000-0000-0000-0000-0000000000a2' WHERE id = '00000000-0000-0000-0000-0000000000e1';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_destino_id, observacao)
+UPDATE evidencia SET situacao = 'em_transito', setor_destino_pendente_id = '00000000-0000-0000-0000-0000000000a2' WHERE id = '00000000-0000-0000-0000-0000000000e1';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_destino_id, observacao)
 VALUES ('00000000-0000-0000-0000-0000000000e1', 'encaminhado', '00000000-0000-0000-0000-0000000000b2', 'Motorista Pedro (sem login)',
         '00000000-0000-0000-0000-0000000000a2', 'Viatura 12');
-SELECT pg_temp.espera_erro($$UPDATE evidencia SET perito_analisando_id = '00000000-0000-0000-0000-0000000000b4' WHERE id = '00000000-0000-0000-0000-0000000000e1'$$,
+SELECT pg_temp.espera_erro($$UPDATE evidencia SET perito_responsavel_id = '00000000-0000-0000-0000-0000000000b4' WHERE id = '00000000-0000-0000-0000-0000000000e1'$$,
   'check constraint', 'em trânsito não tem responsável individual (RF13)');
-SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome) VALUES ('00000000-0000-0000-0000-0000000000e1', 'encaminhado', '00000000-0000-0000-0000-0000000000b2', 'X')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse) VALUES ('00000000-0000-0000-0000-0000000000e1', 'encaminhado', '00000000-0000-0000-0000-0000000000b2', 'X')$$,
   'cadeia_encaminhado', 'encaminhamento exige setor ou destino externo (RF08b, RF13b)');
 
-UPDATE evidencia SET status = 'recebida', setor_pendente_id = NULL, setor_atual_id = '00000000-0000-0000-0000-0000000000a2' WHERE id = '00000000-0000-0000-0000-0000000000e1';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_id)
+UPDATE evidencia SET situacao = 'recebida', setor_destino_pendente_id = NULL, setor_atual_id = '00000000-0000-0000-0000-0000000000a2' WHERE id = '00000000-0000-0000-0000-0000000000e1';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_atual_id)
 VALUES ('00000000-0000-0000-0000-0000000000e1', 'recebido', '00000000-0000-0000-0000-0000000000b3', 'Júlia Farias', '00000000-0000-0000-0000-0000000000a2');
 
 -- ---------------------------------------------------------------- imutabilidade (RNF03)
@@ -147,64 +147,64 @@ SELECT pg_temp.espera_erro($$TRUNCATE cadeia_custodia CASCADE$$, 'apenas inserç
 SET ROLE custodia_app;
 
 -- ---------------------------------------------------------------- análise e rompimento (RF07, RF07b)
-UPDATE evidencia SET status = 'em_analise', perito_analisando_id = '00000000-0000-0000-0000-0000000000b4' WHERE id = '00000000-0000-0000-0000-0000000000e1';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_id)
+UPDATE evidencia SET situacao = 'em_analise', perito_responsavel_id = '00000000-0000-0000-0000-0000000000b4' WHERE id = '00000000-0000-0000-0000-0000000000e1';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_atual_id)
 VALUES ('00000000-0000-0000-0000-0000000000e1', 'em_analise', '00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes', '00000000-0000-0000-0000-0000000000a2');
 
-SELECT pg_temp.espera_erro($$UPDATE lacre SET status = 'rompido', rompido_por = '00000000-0000-0000-0000-0000000000b4', rompido_em = now() WHERE numero LIKE '%-000001'$$,
+SELECT pg_temp.espera_erro($$UPDATE lacre SET situacao = 'rompido', rompido_por_id = '00000000-0000-0000-0000-0000000000b4', rompido_em = now() WHERE numero_lacre LIKE '%-000001'$$,
   'lacre_rompido', 'rompimento sem motivo é recusado (RF07)');
-UPDATE lacre SET status = 'rompido', rompido_por = '00000000-0000-0000-0000-0000000000b4', rompido_em = now(),
-       motivo_rompimento = 'Abertura para exame de microcomparação' WHERE numero LIKE '%-000001';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_id, lacre_id, observacao)
+UPDATE lacre SET situacao = 'rompido', rompido_por_id = '00000000-0000-0000-0000-0000000000b4', rompido_em = now(),
+       motivo_rompimento = 'Abertura para exame de microcomparação' WHERE numero_lacre LIKE '%-000001';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_atual_id, lacre_id, observacao)
 SELECT '00000000-0000-0000-0000-0000000000e1', 'lacre_rompido', '00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes',
-       '00000000-0000-0000-0000-0000000000a2', id, 'Abertura para exame de microcomparação' FROM lacre WHERE numero LIKE '%-000001';
+       '00000000-0000-0000-0000-0000000000a2', id, 'Abertura para exame de microcomparação' FROM lacre WHERE numero_lacre LIKE '%-000001';
 
 SELECT pg_temp.ok((SELECT bloqueada_sem_lacre FROM v_evidencia_situacao WHERE codigo = 'EV-2026-0001'), 'visão marca a evidência bloqueada (RF07b)');
-SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_id) VALUES ('00000000-0000-0000-0000-0000000000e1', 'analisado', '00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes', '00000000-0000-0000-0000-0000000000a2')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_atual_id) VALUES ('00000000-0000-0000-0000-0000000000e1', 'analisado', '00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes', '00000000-0000-0000-0000-0000000000a2')$$,
   'sem lacre ativo', 'sem lacre ativo, nenhuma movimentação é aceita (RF07b, RF19b)');
-SELECT pg_temp.espera_erro($$UPDATE lacre SET status = 'vinculado' WHERE numero LIKE '%-000001'$$,
+SELECT pg_temp.espera_erro($$UPDATE lacre SET situacao = 'vinculado' WHERE numero_lacre LIKE '%-000001'$$,
   'não pode ser reutilizado', 'lacre rompido não é reutilizado (RF05c)');
 
-UPDATE lacre SET status = 'vinculado', evidencia_id = '00000000-0000-0000-0000-0000000000e1',
-       vinculado_por = '00000000-0000-0000-0000-0000000000b4', vinculado_em = now(),
-       hash_no_momento_associacao = encode(sha256('foto'::bytea), 'hex') WHERE numero LIKE '%-000002';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_id, lacre_id)
+UPDATE lacre SET situacao = 'vinculado', evidencia_id = '00000000-0000-0000-0000-0000000000e1',
+       vinculado_por_id = '00000000-0000-0000-0000-0000000000b4', vinculado_em = now(),
+       hash_foto_na_associacao = encode(sha256('foto'::bytea), 'hex') WHERE numero_lacre LIKE '%-000002';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_atual_id, lacre_id)
 SELECT '00000000-0000-0000-0000-0000000000e1', 'lacre_associado', '00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes',
-       '00000000-0000-0000-0000-0000000000a2', id FROM lacre WHERE numero LIKE '%-000002';
-UPDATE evidencia SET status = 'analisada', perito_analisando_id = NULL WHERE id = '00000000-0000-0000-0000-0000000000e1';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_id, observacao)
+       '00000000-0000-0000-0000-0000000000a2', id FROM lacre WHERE numero_lacre LIKE '%-000002';
+UPDATE evidencia SET situacao = 'analisada', perito_responsavel_id = NULL WHERE id = '00000000-0000-0000-0000-0000000000e1';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_atual_id, observacao)
 VALUES ('00000000-0000-0000-0000-0000000000e1', 'analisado', '00000000-0000-0000-0000-0000000000b4', 'Carlos Menezes',
         '00000000-0000-0000-0000-0000000000a2', 'Laudo em redação');
 SELECT pg_temp.ok((SELECT count(*) = 8 FROM cadeia_custodia WHERE evidencia_id = '00000000-0000-0000-0000-0000000000e1'), 'novo lacre libera a evidência e a análise é concluída');
 
 -- ---------------------------------------------------------------- verificação de integridade (RF21, RF22)
 SELECT verificar_cadeia('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000b4') AS vid \gset
-SELECT pg_temp.ok((SELECT integra AND total_registros = 8 FROM verificacao_integridade WHERE id = :'vid'),
+SELECT pg_temp.ok((SELECT cadeia_integra AND total_registros = 8 FROM verificacao_integridade WHERE id = :'vid'),
                   'cadeia íntegra é reconhecida');
 
 -- Simula adulteração direta no banco por um superusuário que desliga o gatilho.
 RESET ROLE;
 ALTER TABLE cadeia_custodia DISABLE TRIGGER cadeia_somente_insercao;
-UPDATE cadeia_custodia SET responsavel_nome = 'Outra Pessoa' WHERE evidencia_id = '00000000-0000-0000-0000-0000000000e1' AND sequencia = 3;
+UPDATE cadeia_custodia SET nome_responsavel_posse = 'Outra Pessoa' WHERE evidencia_id = '00000000-0000-0000-0000-0000000000e1' AND numero_sequencia = 3;
 ALTER TABLE cadeia_custodia ENABLE TRIGGER cadeia_somente_insercao;
 SET ROLE custodia_app;
 
 SELECT verificar_cadeia('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000b4') AS vid \gset
-SELECT pg_temp.ok((SELECT NOT v.integra AND v.registros_divergentes = 1
-                          AND d.sequencia = 3 AND d.tipo = 'conteudo_alterado'
+SELECT pg_temp.ok((SELECT NOT v.cadeia_integra AND v.registros_divergentes = 1
+                          AND d.numero_sequencia = 3 AND d.tipo_divergencia = 'conteudo_alterado'
                      FROM verificacao_integridade v JOIN verificacao_divergencia d ON d.verificacao_id = v.id
                     WHERE v.id = :'vid'),
                   'adulteração é apontada no registro exato (RF22)');
 
 -- ---------------------------------------------------------------- devolução encerra (RF13e)
-UPDATE evidencia SET status = 'devolvida', setor_atual_id = NULL WHERE id = '00000000-0000-0000-0000-0000000000e2';
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, local, fora_do_local)
+UPDATE evidencia SET situacao = 'devolvida', setor_atual_id = NULL WHERE id = '00000000-0000-0000-0000-0000000000e2';
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, endereco_local, cadastro_fora_do_local)
 VALUES ('00000000-0000-0000-0000-0000000000e2', 'coletado', '00000000-0000-0000-0000-0000000000b2', 'Rafael Souza', 'Av. Constantino Nery, 1500', false);
-INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, destino_externo_nome, destino_externo_endereco)
+INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, destino_externo_nome, destino_externo_endereco)
 VALUES ('00000000-0000-0000-0000-0000000000e2', 'devolvido', '00000000-0000-0000-0000-0000000000b2', 'Rafael Souza', '6º DIP', 'Rua A, 10');
-SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por, responsavel_nome, setor_destino_id) VALUES ('00000000-0000-0000-0000-0000000000e2', 'armazenado', '00000000-0000-0000-0000-0000000000b2', 'X', '00000000-0000-0000-0000-0000000000a3')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, setor_destino_id) VALUES ('00000000-0000-0000-0000-0000000000e2', 'armazenado', '00000000-0000-0000-0000-0000000000b2', 'X', '00000000-0000-0000-0000-0000000000a3')$$,
   'cadeia está encerrada', 'nada entra na cadeia depois da devolução (RF13e)');
-SELECT pg_temp.espera_erro($$UPDATE evidencia SET status = 'armazenada', setor_atual_id = '00000000-0000-0000-0000-0000000000a3' WHERE id = '00000000-0000-0000-0000-0000000000e2'$$,
+SELECT pg_temp.espera_erro($$UPDATE evidencia SET situacao = 'armazenada', setor_atual_id = '00000000-0000-0000-0000-0000000000a3' WHERE id = '00000000-0000-0000-0000-0000000000e2'$$,
   'foi devolvida', 'evidência devolvida não muda de situação');
 
 -- ---------------------------------------------------------------- setor em uso não é apagado

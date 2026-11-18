@@ -2547,14 +2547,28 @@ fieldset.f{border:0;padding:0;margin:0 0 14px}
 .err{background:var(--red-bg);color:var(--red-ink);border-radius:8px;padding:10px 12px;font-size:.9rem;margin-top:4px}
 .warn{background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:10px 12px;font-size:.9rem;margin-bottom:14px}
 .ocbox{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px dashed var(--line2);border-radius:10px;padding:12px 14px}
-#tip{position:fixed;z-index:300;left:0;top:0;max-width:300px;background:var(--ink);color:#fff;border-radius:8px;padding:8px 11px;font-size:.8rem;line-height:1.35;pointer-events:none;box-shadow:0 8px 24px rgba(14,26,43,.28);opacity:0;transition:opacity .12s ease}
+#tip{position:fixed;z-index:300;left:0;top:0;max-width:360px;background:var(--ink);color:#fff;border-radius:8px;padding:8px 11px;font-size:.8rem;line-height:1.35;pointer-events:none;box-shadow:0 8px 24px rgba(14,26,43,.28);opacity:0;transition:opacity .12s ease}
 #tip.on{opacity:1}
 #tip div{display:flex;gap:9px;align-items:baseline}
 #tip div+div{margin-top:3px}
 #tip b{font-family:var(--mono);font-weight:600;color:#A9C1FF;white-space:nowrap;min-width:44px}
-[data-req]{cursor:help}
-button[data-req],a[data-req],select[data-req],[data-req] button,[data-req] select,[data-req] a{cursor:pointer}
+[data-req],[data-db]{cursor:help}
+button[data-req],a[data-req],select[data-req],[data-req] button,[data-req] select,[data-req] a,button[data-db],[data-db] button,[data-db] input,[data-db] select,[data-db] textarea,[data-req] input,[data-req] textarea{cursor:auto}
+button[data-req],button[data-db],a[data-req],[data-req] button,[data-db] button,tr.go[data-db]{cursor:pointer}
 .btn:disabled{pointer-events:none}
+#tip .tdb{margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}
+#tip div.tdb,#tip div.tdb0,#tip div.tl1{display:block}
+#tip div.dbl{display:block;margin-top:4px}
+#tip div.dbl code{display:block}
+#tip div.dbl span{display:block;font-size:.74rem;line-height:1.3}
+#tip .tl1{font-size:.7rem;color:#9FB0C4;margin-bottom:2px}
+#tip code{font-family:var(--mono);font-size:.74rem;color:#8EE6C4;white-space:nowrap}
+#tip .tdb span{color:#D5DEE8}
+.colchip{display:inline-block;font-family:var(--mono);font-size:.72rem;background:var(--soft);border:1px solid var(--line);border-radius:5px;padding:1px 6px;margin:2px 4px 0 0;color:var(--ink)}
+.dbcols td{padding:9px 14px;font-size:.88rem;vertical-align:top}
+.dbcols th{padding:8px 14px}
+.reqchip{display:inline-block;font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--pri);background:var(--pri-bg);border-radius:5px;padding:1px 6px;margin:1px 3px 1px 0}
+.dbline{grid-column:2/-1;font-size:.8rem;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){#tip{transition:none}}
 #toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;max-width:min(420px,calc(100vw - 32px));z-index:99;box-shadow:0 10px 30px rgba(14,26,43,.3)}
 #toast:empty{display:none}
@@ -2599,7 +2613,7 @@ button[data-req],a[data-req],select[data-req],[data-req] button,[data-req] selec
     <div class="side-foot">
       <div class="me" id="me"></div>
       <label for="user">Usuário em uso (login simulado)</label>
-      <select id="user" data-req="RF01 RF16"></select>
+      <select id="user" data-req="RF01 RF16" data-db="usuario.nome usuario.perfil usuario.setor_id"></select>
       <button class="reset" data-a="reset">Restaurar dados de exemplo</button>
     </div>
   </aside>
@@ -2619,7 +2633,7 @@ const $=s=>document.querySelector(s);
 const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ZERO='0'.repeat(64);
 const GEO='Localização não disponível nesta prévia';
-const KEY='custodia-mvp-v1';
+const KEY='custodia-mvp-v3';
 const TIPOS=['Arma de fogo','Projétil ou munição','Arma branca','Dispositivo eletrônico','Documento','Material biológico','Substância ou entorpecente','Vestígio papiloscópico','Outro'];
 const CRIMES=['Homicídio','Roubo','Furto','Tráfico de drogas','Lesão corporal','Crime cibernético','Outro'];
 const EMISSOR={instituto:'Instituto de Criminalística',ssp:'SSP',senasp:'SENASP/MJ',tribunal:'Tribunal de Justiça',pf:'Polícia Federal',fabricante:'Embalagem do fabricante',outro:'Outro'};
@@ -2653,6 +2667,7 @@ const P={
  refresh:'<path d="M20 11a8 8 0 10-2.300 6.300"/><path d="M20 5v6h-6"/>',
  edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.500M12 7.600v.300"/>',
+ database:'<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.700 3.100 3 7 3s7-1.300 7-3V6M5 12c0 1.700 3.100 3 7 3s7-1.300 7-3"/>',
  building:'<path d="M4 21V5l8-2v18M12 9l8 2v10M3 21h18"/><path d="M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2"/>'
 };
 const SHORT={
@@ -2670,14 +2685,18 @@ const SHORT={
  RF18:'Assumir grava "Em análise"',RF19:'Só quem assumiu conclui',RF19b:'Concluir exige lacre ativo',RF20:'Cadeia em ordem, com hashes',
  RF21:'Recalcular e comparar hashes',RF22:'Apontar registro divergente',RF23:'Exportar com a verificação',
  RNF03:'Registros não podem ser alterados',RNF05:'Número do lacre gerado pelo sistema'};
-const rq=ids=>ids?` data-req="${ids}"`:'';
+const rq=(ids,db)=>(ids?` data-req="${ids}"`:'')+(db?` data-db="${db}"`:'');
+const DBD={"setor": {"_": ["Setores do Instituto. Setor em uso não é apagado, só desativado.", "RF10, RF11"], "id": ["uuid", "RF10", "Identificador do setor"], "nome": ["text", "RF10", "Nome do setor, de 2 a 120 caracteres; único sem diferenciar maiúsculas"], "ativo": ["boolean", "RF10", "Setor inativo não aparece no encaminhamento nem no cadastro de usuários"], "criado_em": ["timestamptz", "RF10", "Data e hora do cadastro do setor"], "atualizado_em": ["timestamptz", "RF10", "Data e hora da última alteração, atualizada por gatilho"]}, "usuario": {"_": ["Pessoas com acesso ao sistema. Quem aparece em alguma cadeia não é apagado, só desativado.", "RF01, RF11, RF16"], "id": ["uuid", "RF01", "Identificador do usuário"], "nome": ["text", "RF01", "Nome completo, de 2 a 160 caracteres"], "matricula": ["text", "RF01", "Matrícula funcional; única"], "email": ["text", "RF01", "E-mail de acesso; único sem diferenciar maiúsculas"], "senha_hash": ["text", "RF01, RNF-S4", "Hash bcrypt ou Argon2id da senha; senha em texto puro é recusada"], "perfil": ["perfil_usuario", "RF16", "Perfil de acesso: perito, normal ou administrador"], "setor_id": ["uuid", "RF11", "Setor ao qual o usuário pertence"], "ativo": ["boolean", "RF01", "Usuário inativo não faz login"], "ultimo_login_em": ["timestamptz", "RF01", "Data e hora do último login"], "criado_em": ["timestamptz", "RF01", "Data e hora do cadastro"], "atualizado_em": ["timestamptz", "RF01", "Data e hora da última alteração"]}, "token_revogado": {"_": ["Tokens JWT invalidados no logout; a API recusa qualquer token listado aqui.", "RF01, RNF02"], "id_token": ["uuid", "RF01, RNF02", "Identificador único do token JWT (campo jti do token)"], "usuario_id": ["uuid", "RF01", "Usuário dono do token"], "expira_em": ["timestamptz", "RNF02", "Quando o token expira; depois disso a linha pode ser apagada"], "revogado_em": ["timestamptz", "RF01", "Quando o logout aconteceu"]}, "ocorrencia": {"_": ["Dados do pop-up \"Vincular Ocorrência\". Todos os campos são opcionais, mas a linha só existe com ao menos um preenchido.", "RF02b, RF02c, RF02d, RF02e"], "id": ["uuid", "RF02b", "Identificador da ocorrência"], "codigo_gigante": ["text", "RF02c, RF02d", "Código GIGANTE/SSP; único quando preenchido, usado para juntar evidências na mesma ocorrência"], "numero_oficio": ["text", "RF02b", "Número do ofício"], "delegacia_origem": ["text", "RF02b", "Delegacia que originou a ocorrência"], "tipo_crime": ["tipo_crime", "RF02b", "Tipo de crime (lista fixa)"], "data_hora_ocorrencia": ["timestamptz", "RF02b", "Quando o fato aconteceu"], "endereco_ocorrencia": ["text", "RF02b", "Endereço do fato"], "observacoes": ["text", "RF02b", "Observações livres"], "criada_por_id": ["uuid", "RF02b", "Usuário que cadastrou a ocorrência"], "criada_em": ["timestamptz", "RF02b", "Data e hora do cadastro"], "atualizado_em": ["timestamptz", "RF02c", "Data e hora da última alteração (RF02c acrescenta dados)"]}, "ocorrencia_bo": {"_": ["Boletins de ocorrência (B.O.) de cada ocorrência; uma ocorrência pode ter vários.", "RF02b, RF02c"], "ocorrencia_id": ["uuid", "RF02b", "Ocorrência à qual o B.O. pertence"], "numero_bo": ["text", "RF02b, RF02c", "Número do boletim de ocorrência; não se repete na mesma ocorrência"], "adicionado_por_id": ["uuid", "RF02c", "Usuário que incluiu o B.O."], "adicionado_em": ["timestamptz", "RF02c", "Data e hora da inclusão"]}, "evidencia": {"_": ["O objeto rastreado. As colunas de situação são uma cópia de leitura rápida; a cadeia de custódia é a fonte da verdade.", "RF02, RF03, RF12, RF13, RF17 a RF19"], "id": ["uuid", "RF02", "Identificador da evidência"], "codigo": ["text", "RF02", "Código da evidência, ex.: EV-2026-0001; não muda depois do cadastro"], "tipo_evidencia": ["tipo_evidencia", "RF02", "Tipo da evidência (lista fixa)"], "descricao": ["text", "RF02", "Descrição do objeto"], "endereco_coleta": ["text", "RF02", "Endereço onde a evidência foi encontrada"], "latitude_coleta": ["numeric(9,6)", "RF02", "Latitude do local onde foi encontrada"], "longitude_coleta": ["numeric(9,6)", "RF02", "Longitude do local onde foi encontrada"], "ocorrencia_id": ["uuid", "RF02b, RF02e", "Ocorrência vinculada; opcional"], "foto_caminho_arquivo": ["text", "RF02", "Onde o arquivo da foto foi guardado (disco ou bucket)"], "foto_nome_arquivo": ["text", "RF02", "Nome original do arquivo enviado"], "foto_tipo_arquivo": ["text", "RF02", "Formato da foto: image/jpeg, image/png, image/heic ou image/webp"], "foto_tamanho_bytes": ["bigint", "RF02", "Tamanho do arquivo da foto, em bytes"], "foto_hash_sha256": ["char(64)", "RF03, RNF04", "SHA-256 do arquivo da foto, calculado no backend no upload"], "coletado_por_id": ["uuid", "RF02, RF08c", "Usuário que registrou a coleta"], "coletado_em": ["timestamptz", "RF02, RF08c", "Data e hora da coleta"], "situacao": ["situacao_evidencia", "RF12c, RF13, RF18, RF19, RF13e", "Situação atual: coletada, em trânsito, recebida, em análise, analisada, armazenada, em destino externo ou devolvida"], "setor_atual_id": ["uuid", "RF14", "Setor onde a evidência está; vazio em trânsito e após a devolução"], "setor_destino_pendente_id": ["uuid", "RF12, RF13, RF14", "Setor para onde foi encaminhada, enquanto está em trânsito"], "destino_externo_nome": ["text", "RF13b", "Nome do destino fora do Instituto"], "destino_externo_endereco": ["text", "RF13b", "Endereço do destino fora do Instituto"], "perito_responsavel_id": ["uuid", "RF17, RF18, RF19", "Perito que assumiu a análise; só ele conclui"], "criado_em": ["timestamptz", "RF02", "Data e hora da criação da linha"], "atualizado_em": ["timestamptz", "RF12 a RF19", "Data e hora da última mudança de situação"]}, "lote_lacre": {"_": ["Lotes de lacres do Instituto, gerados antes de ir a campo. Só aceita inserção.", "RF04, RF06"], "id": ["uuid", "RF04", "Identificador do lote"], "codigo_lote": ["text", "RF04", "Código do lote, ex.: L-2026-0001, gerado pelo banco"], "quantidade": ["integer", "RF04", "Quantidade de lacres no lote, de 1 a 500"], "primeiro_numero_lacre": ["text", "RF04, RF06", "Primeiro número de lacre do lote"], "ultimo_numero_lacre": ["text", "RF04, RF06", "Último número de lacre do lote"], "gerado_por_id": ["uuid", "RF04, RF16", "Administrador que gerou o lote"], "gerado_em": ["timestamptz", "RF04", "Data e hora da geração"]}, "lacre": {"_": ["Cada lacre físico: do Instituto (com lote e QR code) ou externo usado como lacre principal (sem lote).", "RF04 a RF07c, RNF05"], "id": ["uuid", "RF04", "Identificador do lacre"], "numero_lacre": ["text", "RF04c, RF05e, RNF05", "Número impresso no lacre e único conteúdo do QR code; único no sistema, externos inclusive"], "emissor": ["emissor_lacre", "RF04d, RF05d, RF06b", "Quem emitiu o lacre: instituto (só com lote), SSP, SENASP/MJ, tribunal, Polícia Federal, fabricante ou outro"], "lote_id": ["uuid", "RF04, RF04d", "Lote de origem; vazio para lacre externo"], "situacao": ["situacao_lacre", "RF04b, RF05b, RF07", "Disponível, vinculado ou rompido; rompido é final"], "evidencia_id": ["uuid", "RF05b, RF05c", "Evidência lacrada; vazio enquanto disponível; no máximo um lacre vinculado por evidência"], "hash_foto_na_associacao": ["char(64)", "RF05b", "SHA-256 da foto da evidência no momento em que o lacre foi associado"], "cadastrado_por_id": ["uuid", "RF05d", "Quem cadastrou um lacre externo (obrigatório para externos)"], "cadastrado_em": ["timestamptz", "RF04, RF05d", "Data e hora em que o lacre entrou no sistema"], "vinculado_por_id": ["uuid", "RF05, RF05b", "Quem associou o lacre à evidência"], "vinculado_em": ["timestamptz", "RF05b", "Data e hora da associação"], "rompido_por_id": ["uuid", "RF07, RF07c", "Quem registrou o rompimento; define quem pode substituir o lacre antes de a evidência chegar a um setor"], "motivo_rompimento": ["text", "RF07", "Motivo do rompimento; obrigatório"], "rompido_em": ["timestamptz", "RF07", "Data e hora do rompimento"]}, "lacre_referencia_externa": {"_": ["Lacres de outras instituições que já estavam na evidência, ligados ao lacre do Instituto como histórico. Só aceita inserção.", "RF04e"], "id": ["uuid", "RF04e", "Identificador da referência"], "lacre_id": ["uuid", "RF04e", "Lacre do Instituto ao qual a referência se liga"], "emissor": ["emissor_lacre", "RF04e", "Emissor do lacre externo (qualquer um, menos instituto)"], "numero_lacre_externo": ["text", "RF04e", "Número do lacre da outra instituição"], "observacao": ["text", "RF04e", "Observação livre"], "associado_por_id": ["uuid", "RF04e", "Quem registrou a referência"], "associado_em": ["timestamptz", "RF04e", "Data e hora do registro"]}, "cadeia_custodia": {"_": ["Histórico de cada evidência, encadeado por SHA-256. Só aceita inserção; número de sequência, hashes e data e hora vêm do banco.", "RF08, RF09, RF12 a RF20, RNF03, RNF04"], "id": ["uuid", "RF08, RF09", "Identificador do registro; entra no hash"], "evidencia_id": ["uuid", "RF08", "Evidência a que o registro pertence"], "numero_sequencia": ["integer", "RF08c, RF09", "1, 2, 3... sem buracos; o registro 1 é sempre \"coletado\"; preenchido pelo banco"], "acao": ["acao_custodia", "RF08, RF13g, RF18", "O que aconteceu: coletado, encaminhado, recebido, chegada a destino externo, em análise, analisado, armazenado, devolvido, lacre associado ou lacre rompido"], "registrado_por_id": ["uuid", "RF08, RF14", "Usuário logado que fez o registro"], "nome_responsavel_posse": ["text", "RF08, RF12b", "Quem tem a posse física; pode ser um transportador sem login"], "setor_atual_id": ["uuid", "RF14, RF17", "Setor onde a ação aconteceu; obrigatório em recebido, em análise e analisado"], "setor_destino_id": ["uuid", "RF08b, RF12", "Setor de destino em encaminhado e armazenado"], "destino_externo_nome": ["text", "RF13b", "Nome do destino fora do Instituto"], "destino_externo_endereco": ["text", "RF13b", "Endereço do destino fora do Instituto"], "endereco_local": ["text", "RF08c, RF13c", "Endereço em texto; obrigatório na coleta e na chegada a destino externo"], "lacre_id": ["uuid", "RF05, RF07", "Lacre envolvido; obrigatório só em lacre associado e lacre rompido"], "data_hora_registro": ["timestamptz", "RF08, RNF-S1", "Data e hora do servidor, nunca do aparelho"], "observacao": ["text", "RF08", "Observação livre"], "gps_obtido": ["boolean", "RF13c, RF13f", "Se o GPS do aparelho respondeu; falso não impede a operação"], "gps_latitude": ["numeric(9,6)", "RF02b, RF13f", "Latitude do aparelho no momento do registro"], "gps_longitude": ["numeric(9,6)", "RF02b, RF13f", "Longitude do aparelho no momento do registro"], "gps_precisao_metros": ["numeric(8,1)", "RF13f", "Precisão informada pelo navegador, em metros"], "cadastro_fora_do_local": ["boolean", "RF02b", "Só em \"coletado\": o cadastro foi feito longe do endereço informado"], "justificativa_fora_local": ["text", "RF02b", "Obrigatória quando o cadastro foi feito fora do local"], "hash_registro_anterior": ["char(64)", "RF09", "Hash do registro anterior; 64 zeros no primeiro"], "hash_registro": ["char(64)", "RF09, RNF04", "SHA-256 deste registro, calculado pelo banco"]}, "verificacao_integridade": {"_": ["Resultado de cada verificação de integridade feita sob demanda. Só aceita inserção.", "RF21, RF23"], "id": ["uuid", "RF21", "Identificador da verificação"], "evidencia_id": ["uuid", "RF21", "Evidência verificada"], "executada_por_id": ["uuid", "RF21", "Usuário que pediu a verificação"], "executada_em": ["timestamptz", "RF21, RF23", "Data e hora da verificação"], "total_registros": ["integer", "RF21", "Quantos registros foram conferidos"], "registros_divergentes": ["integer", "RF22", "Quantos registros não conferiram"], "cadeia_integra": ["boolean", "RF21, RF23", "Verdadeiro quando nenhum registro diverge; calculado pelo banco"], "hash_ultimo_registro": ["char(64)", "RF23", "Hash do último registro no momento da verificação; vai no relatório"]}, "verificacao_divergencia": {"_": ["Um registro por movimentação que não conferiu na verificação. Só aceita inserção.", "RF22"], "verificacao_id": ["uuid", "RF22", "Verificação em que a divergência apareceu"], "numero_sequencia": ["integer", "RF22", "Número do registro divergente na cadeia"], "cadeia_custodia_id": ["uuid", "RF22", "Registro divergente"], "tipo_divergencia": ["tipo_divergencia", "RF22", "Conteúdo alterado, elo quebrado ou sequência quebrada"], "hash_armazenado": ["char(64)", "RF22", "Hash que estava guardado"], "hash_recalculado": ["char(64)", "RF22", "Hash recalculado na verificação"]}, "log_acesso": {"_": ["Quem consultou ou exportou cada evidência (opcional no MVP). Só aceita inserção.", "RNF-S7"], "id": ["bigint", "RNF-S7", "Número sequencial do acesso"], "usuario_id": ["uuid", "RNF-S7", "Quem acessou"], "evidencia_id": ["uuid", "RNF-S7", "Evidência consultada"], "acao_acesso": ["acao_acesso", "RNF-S7, RF23", "Viu a evidência, viu a cadeia, exportou PDF ou CSV, ou verificou a integridade"], "endereco_ip": ["inet", "RNF-S7", "Endereço IP de quem acessou"], "navegador": ["text", "RNF-S7", "Identificação do navegador (user agent)"], "ocorrido_em": ["timestamptz", "RNF-S7", "Data e hora do acesso"]}};
+const DBORD=["setor", "usuario", "token_revogado", "ocorrencia", "ocorrencia_bo", "evidencia", "lote_lacre", "lacre", "lacre_referencia_externa", "cadeia_custodia", "verificacao_integridade", "verificacao_divergencia", "log_acesso"];
+const REV={};DBORD.forEach(t=>Object.entries(DBD[t]).forEach(([c,v])=>{if(c==='_')return;String(v[1]).split(/,\s*/).forEach(id=>{id=id.trim();if(/^RN?F/.test(id)&&!/ a /.test(id))(REV[id]=REV[id]||[]).push(t+'.'+c)})}));
+const curto=t=>{t=String(t||'').split(';')[0];return t.length>78?t.slice(0,76)+'…':t};
 const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${P[n]||''}</svg>`;
-let S, ui={sel:null,evf:'',q:'',fs:'',fe:'',lote:null,rf:'',rq:''}, draftOc=null;
+let S, ui={sel:null,evf:'',q:'',fs:'',fe:'',lote:null,rf:'',rq:'',dq:''}, draftOc=null;
 
 /* ---------- hash ---------- */
 const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 const sha=async s=>hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)));
-const payload=r=>JSON.stringify([r.seq,r.evidenciaId,r.acao,r.responsavel,r.setorId||'',r.destino||'',r.local||'',r.dataHora,r.observacao||'',r.geo||'']);
+const payload=r=>JSON.stringify([r.seq,r.evidenciaId,r.acao,r.registradoPor||'',r.responsavel,r.setorId||'',r.destino||'',r.local||'',r.dataHora,r.observacao||'',r.geo||'']);
 const hashRec=r=>sha(r.hashAnterior+'|'+payload(r));
 
 /* ---------- estado ---------- */
@@ -2688,6 +2707,7 @@ const user=id=>S.users.find(u=>u.id===id);
 const evById=id=>S.evidencias.find(x=>x.id===id);
 const lacreAtivo=ev=>S.lacres.find(l=>l.evidenciaId===ev.id&&l.status==='vinculado');
 const bloqueada=ev=>ev.teveLacre&&!lacreAtivo(ev)&&ev.status!=='devolvida';
+const tam=b=>b>=1048576?(b/1048576).toFixed(1).replace('.',',')+' MB':Math.round(b/1024)+' KB';
 const fmt=d=>new Date(d).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
 const short=h=>h?h.slice(0,10)+'…'+h.slice(-8):'';
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}
@@ -2695,7 +2715,7 @@ function toast(t){const el=$('#toast');el.textContent=t;clearTimeout(toast.t);to
 
 async function mov(ev,acao,o={}){
   const c=S.cadeia[ev.id]||(S.cadeia[ev.id]=[]);const u=o.user||me();
-  const r={seq:c.length+1,evidenciaId:ev.id,acao,responsavel:o.responsavel||u.nome,setorId:o.setorId||null,destino:o.destino||'',local:o.local||'',dataHora:o.at||new Date().toISOString(),observacao:o.obs||'',geo:GEO,hashAnterior:c.length?c[c.length-1].hashRegistro:ZERO};
+  const r={seq:c.length+1,evidenciaId:ev.id,acao,registradoPor:u.nome,responsavel:o.responsavel||u.nome,setorId:o.setorId||null,destino:o.destino||'',local:o.local||'',dataHora:o.at||new Date().toISOString(),observacao:o.obs||'',geo:GEO,hashAnterior:c.length?c[c.length-1].hashRegistro:ZERO};
   r.hashRegistro=await hashRec(r);c.push(r);return r;
 }
 
@@ -2737,8 +2757,8 @@ async function opConcluir(ev,u,obs,at){ev.status='analisada';ev.peritoId=null;aw
 async function opArmazenar(ev,u,sid,obs,at){ev.status='armazenada';ev.setorAtualId=sid;ev.destinoExterno=null;ev.aguardandoAnalise=false;await mov(ev,'Armazenado',{user:u,at,setorId:sid,obs})}
 async function opDevolver(ev,u,para,obs,at){ev.status='devolvida';ev.setorAtualId=null;ev.setorPendenteId=null;ev.aguardandoAnalise=false;await mov(ev,'Devolvido',{user:u,at,destino:para,obs})}
 function novoLote(u,qtd,at){
-  const id='L-'+String(S.lotes.length+1).padStart(3,'0');
-  S.lotes.push({id,qtd,por:u.nome,geradoEm:at||new Date().toISOString()});
+  const id='L-2026-'+String(S.lotes.length+1).padStart(4,'0'),num=k=>'IC-2026-'+String(k).padStart(6,'0');
+  S.lotes.push({id,qtd,por:u.nome,geradoEm:at||new Date().toISOString(),primeiro:num(S.seqLacre+1),ultimo:num(S.seqLacre+qtd)});
   for(let i=0;i<qtd;i++)S.lacres.push({id:'lc'+(++S.seq),numero:'IC-2026-'+String(++S.seqLacre).padStart(6,'0'),externo:false,emissor:'instituto',loteId:id,status:'disponivel',refs:[],geradoEm:at||new Date().toISOString()});
   return id;
 }
@@ -2747,12 +2767,12 @@ function vincularOcorrencia(d,u){
   if(vazio)return null;
   const bos=(d.bos||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean);
   let oc=d.gigante&&S.ocorrencias.find(o=>o.gigante&&o.gigante.toLowerCase()===d.gigante.trim().toLowerCase());
-  if(oc){bos.forEach(b=>{if(!oc.bos.includes(b))oc.bos.push(b)});['oficio','delegacia','crime','endereco','obs'].forEach(k=>{if(!oc[k]&&d[k])oc[k]=d[k].trim()})}
-  else{oc={id:'oc'+(++S.seq),gigante:(d.gigante||'').trim(),oficio:d.oficio||'',delegacia:d.delegacia||'',crime:d.crime||'',endereco:d.endereco||'',obs:d.obs||'',bos,criadaPor:u.nome,criadaEm:new Date().toISOString()};S.ocorrencias.push(oc)}
+  if(oc){bos.forEach(b=>{if(!oc.bos.includes(b))oc.bos.push(b)});['oficio','delegacia','crime','endereco','obs','dataHora'].forEach(k=>{if(!oc[k]&&d[k])oc[k]=d[k].trim()})}
+  else{oc={id:'oc'+(++S.seq),gigante:(d.gigante||'').trim(),dataHora:d.dataHora||'',oficio:d.oficio||'',delegacia:d.delegacia||'',crime:d.crime||'',endereco:d.endereco||'',obs:d.obs||'',bos,criadaPor:u.nome,criadaEm:new Date().toISOString()};S.ocorrencias.push(oc)}
   return oc.id;
 }
 async function novaEvidencia(u,d,at){
-  const ev={id:'ev'+(++S.seq),codigo:d.codigo,tipo:d.tipo,descricao:d.descricao,endereco:d.endereco,ocorrenciaId:d.ocorrenciaId||null,fotoNome:d.fotoNome||'',hashFoto:d.hashFoto||'',coletadoPor:u.nome,coletadoEm:at||new Date().toISOString(),status:'coletada',setorAtualId:null,setorPendenteId:null,destinoExterno:null,aguardandoAnalise:false,peritoId:null,teveLacre:false,rompidoPorId:null};
+  const ev={id:'ev'+(++S.seq),codigo:d.codigo,tipo:d.tipo,descricao:d.descricao,endereco:d.endereco,lat:d.lat||'',lng:d.lng||'',ocorrenciaId:d.ocorrenciaId||null,fotoNome:d.fotoNome||'',fotoTipo:d.fotoTipo||'',fotoTamanho:d.fotoTamanho||0,fotoCaminho:d.fotoNome?`evidencias/${d.codigo}/${d.fotoNome}`:'',hashFoto:d.hashFoto||'',coletadoPor:u.nome,coletadoEm:at||new Date().toISOString(),status:'coletada',setorAtualId:null,setorPendenteId:null,destinoExterno:null,aguardandoAnalise:false,peritoId:null,teveLacre:false,rompidoPorId:null};
   S.evidencias.push(ev);
   await mov(ev,'Coletado',{user:u,at,local:d.endereco,obs:[d.fora?`Cadastro feito fora do local indicado. Justificativa: ${d.justificativa}`:'Cadastro feito no local indicado.',d.hashFoto?`SHA-256 da foto: ${d.hashFoto}`:'Sem foto anexada.'].join(' ')});
   return ev;
@@ -2762,13 +2782,13 @@ async function novaEvidencia(u,d,at){
 async function seed(){
   S={seq:0,seqLacre:0,me:'u2',verif:{},cadeia:{},lotes:[],lacres:[],evidencias:[],ocorrencias:[],
     setores:[{id:'s1',nome:'Recepção',ativo:true},{id:'s2',nome:'Laboratório de Balística',ativo:true},{id:'s3',nome:'Depósito',ativo:true},{id:'s4',nome:'Perícia Externa',ativo:true},{id:'s5',nome:'Laboratório de Química',ativo:false}],
-    users:[{id:'u1',nome:'Ana Ribeiro',matricula:'1001',papel:'admin',setorId:'s1'},{id:'u2',nome:'Rafael Souza',matricula:'2014',papel:'perito',setorId:'s4'},{id:'u3',nome:'Júlia Farias',matricula:'3120',papel:'normal',setorId:'s2'},{id:'u4',nome:'Carlos Menezes',matricula:'2031',papel:'perito',setorId:'s2'},{id:'u5',nome:'Bruno Teixeira',matricula:'2047',papel:'perito',setorId:'s2'},{id:'u6',nome:'Marta Lima',matricula:'3155',papel:'normal',setorId:'s3'}]};
+    users:[{id:'u1',nome:'Ana Ribeiro',matricula:'1001',email:'ana.ribeiro@ic.gov.br',papel:'admin',setorId:'s1'},{id:'u2',nome:'Rafael Souza',matricula:'2014',email:'rafael.souza@ic.gov.br',papel:'perito',setorId:'s4'},{id:'u3',nome:'Júlia Farias',matricula:'3120',email:'julia.farias@ic.gov.br',papel:'normal',setorId:'s2'},{id:'u4',nome:'Carlos Menezes',matricula:'2031',email:'carlos.menezes@ic.gov.br',papel:'perito',setorId:'s2'},{id:'u5',nome:'Bruno Teixeira',matricula:'2047',email:'bruno.teixeira@ic.gov.br',papel:'perito',setorId:'s2'},{id:'u6',nome:'Marta Lima',matricula:'3155',email:'marta.lima@ic.gov.br',papel:'normal',setorId:'s3'}],ver:3};
   const [ana,raf,jul,car]=[user('u1'),user('u2'),user('u3'),user('u4')];
   const t=(d,h)=>`2026-11-${d}T${h}:00-04:00`;
   novoLote(ana,12,t('09','10:00'));
-  const oc1=vincularOcorrencia({gigante:'GIG-2026-004417',oficio:'Of. 0457/2026',delegacia:'1º DIP',crime:'Homicídio',endereco:'Rua Tapajós, 214, Centro, Manaus',bos:'BO 2026/118.332'},raf);
-  const oc2=vincularOcorrencia({gigante:'GIG-2026-004502',delegacia:'6º DIP',crime:'Lesão corporal',bos:'BO 2026/119.870'},raf);
-  const e1=await novaEvidencia(raf,{codigo:'EV-2026-0001',tipo:TIPOS[1],descricao:'Projétil de arma de fogo deformado',endereco:'Rua Tapajós, 214, Centro, Manaus',ocorrenciaId:oc1,hashFoto:await sha('foto-exemplo-1'),fotoNome:'projetil.jpg'},t('10','21:40'));
+  const oc1=vincularOcorrencia({gigante:'GIG-2026-004417',dataHora:'2026-11-10T20:30',oficio:'Of. 0457/2026',delegacia:'1º DIP',crime:'Homicídio',endereco:'Rua Tapajós, 214, Centro, Manaus',bos:'BO 2026/118.332'},raf);
+  const oc2=vincularOcorrencia({gigante:'GIG-2026-004502',dataHora:'2026-11-15T22:40',delegacia:'6º DIP',crime:'Lesão corporal',bos:'BO 2026/119.870'},raf);
+  const e1=await novaEvidencia(raf,{codigo:'EV-2026-0001',tipo:TIPOS[1],descricao:'Projétil de arma de fogo deformado',endereco:'Rua Tapajós, 214, Centro, Manaus',ocorrenciaId:oc1,hashFoto:await sha('foto-exemplo-1'),fotoNome:'projetil.jpg',fotoTipo:'image/jpeg',fotoTamanho:482113,lat:'-3.131270',lng:'-60.023410'},t('10','21:40'));
   await opAssociar(e1,raf,{numero:'IC-2026-000001'},t('10','21:42'));
   await opEncaminhar(e1,raf,{setorId:'s2',obs:'Transporte em viatura do Instituto'},t('10','22:15'));
   await opReceber(e1,jul,'Invólucro íntegro na chegada',t('11','07:50'));
@@ -2777,13 +2797,13 @@ async function seed(){
   await opAssociar(e1,car,{numero:'IC-2026-000002'},t('12','15:30'));
   await opConcluir(e1,car,'Exame concluído, laudo em redação',t('12','15:35'));
   await opArmazenar(e1,car,'s3','Prateleira B-14',t('12','16:20'));
-  const e2=await novaEvidencia(raf,{codigo:'EV-2026-0002',tipo:TIPOS[1],descricao:'Estojo deflagrado calibre 9 mm',endereco:'Rua Tapajós, 214, Centro, Manaus',ocorrenciaId:oc1,hashFoto:await sha('foto-exemplo-2'),fotoNome:'estojo.jpg'},t('14','18:05'));
+  const e2=await novaEvidencia(raf,{codigo:'EV-2026-0002',tipo:TIPOS[1],descricao:'Estojo deflagrado calibre 9 mm',endereco:'Rua Tapajós, 214, Centro, Manaus',ocorrenciaId:oc1,hashFoto:await sha('foto-exemplo-2'),fotoNome:'estojo.jpg',fotoTipo:'image/jpeg',fotoTamanho:391877,lat:'-3.131270',lng:'-60.023410'},t('14','18:05'));
   await opAssociar(e2,raf,{numero:'IC-2026-000003'},t('14','18:07'));
   await opEncaminhar(e2,raf,{setorId:'s2',obs:''},t('14','18:40'));
   const e3=await novaEvidencia(raf,{codigo:'EV-2026-0003',tipo:TIPOS[2],descricao:'Faca com cabo de madeira, lâmina de 18 cm',endereco:'Av. Constantino Nery, 1500, Manaus',ocorrenciaId:oc2,fora:true,justificativa:'Local sem condições de segurança; cadastro feito na viatura.'},t('15','23:10'));
   await opAssociar(e3,raf,{externo:true,emissor:'ssp',numero:'SSP-88231'},t('15','23:12'));
   await opRomper(e3,raf,'Invólucro rasgou durante o transporte',t('15','23:55'));
-  const e4=await novaEvidencia(raf,{codigo:'EV-2026-0004',tipo:TIPOS[3],descricao:'Aparelho celular com tela trincada',endereco:'Av. Constantino Nery, 1500, Manaus',ocorrenciaId:oc2,hashFoto:await sha('foto-exemplo-4'),fotoNome:'celular.jpg'},t('15','23:20'));
+  const e4=await novaEvidencia(raf,{codigo:'EV-2026-0004',tipo:TIPOS[3],descricao:'Aparelho celular com tela trincada',endereco:'Av. Constantino Nery, 1500, Manaus',ocorrenciaId:oc2,hashFoto:await sha('foto-exemplo-4'),fotoNome:'celular.jpg',fotoTipo:'image/jpeg',fotoTamanho:512640,lat:'-3.104920',lng:'-60.025310'},t('15','23:20'));
   await opAssociar(e4,raf,{numero:'IC-2026-000004'},t('15','23:22'));
   await opEncaminhar(e4,raf,{setorId:'s2',obs:''},t('16','00:30'));
   await opReceber(e4,jul,'',t('16','07:45'));
@@ -2796,9 +2816,9 @@ const ini=n=>n.split(' ').map(x=>x[0]).slice(0,2).join('');
 const av=(u,sm)=>`<span class="av ${sm?'sm':''}" style="--avc:${AVC[(+u.id.slice(1)||0)%AVC.length]}" aria-hidden="true">${e(ini(u.nome))}</span>`;
 const pillS=(t,c,x='')=>`<span class="pill c-${c} ${x}">${t}</span>`;
 const STREQ={em_transito:'RF12c RF13',em_analise:'RF18',analisada:'RF19',externo:'RF13c RF13d',devolvida:'RF13e',recebida:'RF14 RF15b',coletada:'RF08c',armazenada:'RF08b'};
-const pill=ev=>bloqueada(ev)?'<span class="pill solid" data-req="RF07b">Sem lacre ativo</span>':`<span class="pill c-${STATUS[ev.status][1]}"${rq(STREQ[ev.status])}>${STATUS[ev.status][0]}</span>`;
+const pill=ev=>bloqueada(ev)?'<span class="pill solid" data-req="RF07b" data-db="lacre.situacao">Sem lacre ativo</span>':`<span class="pill c-${STATUS[ev.status][1]}"${rq(STREQ[ev.status],'evidencia.situacao')}>${STATUS[ev.status][0]}</span>`;
 const ph=(t,sub,act='')=>`<header class="ph"><div><h1>${t}</h1><p>${sub}</p></div><div>${act}</div></header>`;
-const stat=(key,grp,val,n,label,icon,c,req)=>`<button class="stat c-${c}"${rq(req)} data-a="filtro" data-g="${grp}" data-v="${key}" aria-pressed="${val===key}"><span class="tile">${ic(icon)}</span><span><b>${n}</b><span>${label}</span></span></button>`;
+const stat=(key,grp,val,n,label,icon,c,req,db)=>`<button class="stat c-${c}"${rq(req,db)} data-a="filtro" data-g="${grp}" data-v="${key}" aria-pressed="${val===key}"><span class="tile">${ic(icon)}</span><span><b>${n}</b><span>${label}</span></span></button>`;
 function onde(ev){
   if(ev.status==='devolvida')return 'Fora da posse do Instituto';
   if(ev.status==='em_transito')return 'A caminho de '+(ev.destinoExterno?ev.destinoExterno.nome+' (externo)':sn(ev.setorPendenteId));
@@ -2818,15 +2838,21 @@ function evRows(){
   if(!list.length)return `<tr><td colspan="6" class="empty">${S.evidencias.length?'Nenhuma evidência com esse filtro.':'Nenhuma evidência ainda. Use "Registrar evidência" para criar a primeira.'}</td></tr>`;
   return list.map(ev=>{const c=S.cadeia[ev.id],u=c[c.length-1],l=lacreAtivo(ev),b=bloqueada(ev);
     return `<tr class="go ${b?'alert':''}" data-a="abrir" data-id="${ev.id}" tabindex="0">
-    <td><div class="cell"><span class="tile c-${b?'red':'blue'}">${ic(b?'alert':'box')}</span><div><span class="chip">${e(ev.codigo)}</span><strong>${e(ev.descricao)}</strong></div></div></td>
-    <td data-l="Tipo">${e(ev.tipo)}</td><td>${pill(ev)}</td><td data-l="Onde está">${e(onde(ev))}</td>
-    <td data-l="Lacre">${l?`<span class="mono">${e(l.numero)}</span>`:`<span class="${b?'':'muted'}" ${b?'style="color:var(--red);font-weight:600"':''}>${b?'Rompido':'Sem lacre'}</span>`}</td>
-    <td data-l="Última movimentação"><span class="small">${e(u.acao)}<br><span class="muted">${fmt(u.dataHora)}</span></span></td></tr>`}).join('');
+    <td><div class="cell"><span class="tile c-${b?'red':'blue'}">${ic(b?'alert':'box')}</span><div data-db="evidencia.codigo evidencia.descricao"><span class="chip">${e(ev.codigo)}</span><strong>${e(ev.descricao)}</strong></div></div></td>
+    <td data-l="Tipo" data-db="evidencia.tipo_evidencia">${e(ev.tipo)}</td><td>${pill(ev)}</td><td data-l="Onde está" data-db="evidencia.setor_atual_id evidencia.setor_destino_pendente_id evidencia.destino_externo_nome evidencia.perito_responsavel_id">${e(onde(ev))}</td>
+    <td data-l="Lacre" data-db="lacre.numero_lacre lacre.situacao">${l?`<span class="mono">${e(l.numero)}</span>`:`<span class="${b?'':'muted'}" ${b?'style="color:var(--red);font-weight:600"':''}>${b?'Rompido':'Sem lacre'}</span>`}</td>
+    <td data-l="Última movimentação" data-db="cadeia_custodia.acao cadeia_custodia.data_hora_registro"><span class="small">${e(u.acao)}<br><span class="muted">${fmt(u.dataHora)}</span></span></td></tr>`}).join('');
+}
+function dbTabs(tabs,chips){
+  if(!tabs.length)return '<div class="card empty">Nenhuma coluna com essa busca.</div>';
+  return tabs.map(([t,cols])=>`<section class="card" style="margin-bottom:16px"><div class="card-h"><div><h2 class="mono" style="font-size:1rem">${e(t)}</h2><span class="small muted">${e(DBD[t]._[0])}</span></div><span>${chips(DBD[t]._[1])}</span></div>
+   <div class="tw"><table class="dbcols"><thead><tr><th>Coluna</th><th>Tipo</th><th>Requisitos</th><th>Descrição</th></tr></thead><tbody>${cols.map(([c,v])=>`<tr><td><span class="colchip" data-db="${t}.${c}">${e(c)}</span></td><td class="mono small">${e(v[0])}</td><td>${chips(v[1])}</td><td class="small">${e(v[2])}</td></tr>`).join('')}</tbody></table></div></section>`).join('');
 }
 function reqList(){
   const q=ui.rq.trim().toLowerCase(),ok=r=>(!ui.rf||r[1]===ui.rf)&&(!q||(r[0]+' '+r[2]+' '+(r[3]||'')).toLowerCase().includes(q));
   const tag={ok:pillS('No protótipo','green'),sim:pillS('Simulado','amber'),real:pillS('Só no sistema real','slate')};
-  const rows=a=>a.map(r=>`<div class="req"><span class="chip">${r[0]}</span><span>${r[2]}</span>${tag[r[1]]}${r[3]?`<span class="note">${ic('alert')}<span>${r[3]}</span></span>`:''}</div>`).join('');
+  const dbl=id=>{const cs=REV[id]||[];return cs.length?`<span class="dbline">No banco: ${cs.map(c=>`<span class="colchip" data-db="${c}">${c}</span>`).join('')}</span>`:''};
+  const rows=a=>a.map(r=>`<div class="req"><span class="chip">${r[0]}</span><span>${r[2]}</span>${tag[r[1]]}${r[3]?`<span class="note">${ic('alert')}<span>${r[3]}</span></span>`:''}${dbl(r[0])}</div>`).join('');
   const bloco=(t,a)=>{const f=a.filter(ok);return f.length?`<section class="card" style="margin-bottom:16px"><div class="card-h"><h2>${t}</h2><span class="muted small">${f.length} ${f.length===1?'requisito':'requisitos'}</span></div>${rows(f)}</section>`:''};
   const rf=RF.map(g=>bloco(g[0],g[1])).join(''),rn=bloco('Do documento',RNF)+bloco('Sugeridos, não constam no documento',SUG);
   if(!rf&&!rn)return '<div class="card empty">Nenhum requisito com esse filtro.</div>';
@@ -2837,39 +2863,49 @@ const views={
 evidencias(){
   if(ui.sel&&evById(ui.sel))return detalhe(evById(ui.sel));
   const n=k=>S.evidencias.filter(EVF[k]).length;
-  return ph('Evidências','O que está sob custódia do Instituto, em que situação e com quem.',`<button class="btn pri" data-a="nova" data-req="RF02 RF03 RF08c">${ic('plus')}Registrar evidência</button>`)+
-  `<div class="stats">${stat('','evf',ui.evf,n(''),'Todas as evidências','box','blue')}${stat('em_transito','evf',ui.evf,n('em_transito'),'Em trânsito','truck','amber','RF12c RF13')}${stat('em_analise','evf',ui.evf,n('em_analise'),'Em análise','flask','violet','RF18')}${stat('bloq','evf',ui.evf,n('bloq'),'Sem lacre ativo','alert','red','RF07b')}</div>
-  <div class="card"><div class="tools"><div class="search">${ic('search')}<input type="search" data-q="q" value="${e(ui.q)}" placeholder="Buscar por código, descrição ou tipo" aria-label="Buscar evidência"></div></div>
-  <div class="tw"><table class="evt"><thead><tr><th>Evidência</th><th>Tipo</th><th>Situação</th><th>Onde está</th><th>Lacre</th><th>Última movimentação</th></tr></thead><tbody id="evrows">${evRows()}</tbody></table></div></div>`;
+  return ph('Evidências','O que está sob custódia do Instituto, em que situação e com quem.',`<button class="btn pri" data-a="nova" data-req="RF02 RF03 RF08c" data-db="evidencia cadeia_custodia">${ic('plus')}Registrar evidência</button>`)+
+  `<div class="stats">${stat('','evf',ui.evf,n(''),'Todas as evidências','box','blue','RF02 RF20','evidencia.codigo evidencia.situacao')}${stat('em_transito','evf',ui.evf,n('em_transito'),'Em trânsito','truck','amber','RF12c RF13','evidencia.situacao evidencia.setor_destino_pendente_id')}${stat('em_analise','evf',ui.evf,n('em_analise'),'Em análise','flask','violet','RF18','evidencia.situacao evidencia.perito_responsavel_id')}${stat('bloq','evf',ui.evf,n('bloq'),'Sem lacre ativo','alert','red','RF07b','lacre.situacao lacre.evidencia_id')}</div>
+  <div class="card"><div class="tools"><div class="search">${ic('search')}<input type="search" data-q="q" data-req="RF20" data-db="evidencia.codigo evidencia.descricao evidencia.tipo_evidencia" value="${e(ui.q)}" placeholder="Buscar por código, descrição ou tipo" aria-label="Buscar evidência"></div></div>
+  <div class="tw"><table class="evt"><thead><tr><th data-req="RF02" data-db="evidencia.codigo evidencia.descricao">Evidência</th><th data-req="RF02" data-db="evidencia.tipo_evidencia">Tipo</th><th data-req="RF12c RF13" data-db="evidencia.situacao">Situação</th><th data-req="RF13 RF14" data-db="evidencia.setor_atual_id evidencia.setor_destino_pendente_id evidencia.destino_externo_nome evidencia.perito_responsavel_id">Onde está</th><th data-req="RF05" data-db="lacre.numero_lacre lacre.situacao">Lacre</th><th data-req="RF08 RF20" data-db="cadeia_custodia.acao cadeia_custodia.data_hora_registro">Última movimentação</th></tr></thead><tbody id="evrows">${evRows()}</tbody></table></div></div>`;
 },
 lacres(){
   const c=s=>S.lacres.filter(l=>l.status===s).length,adm=me().papel==='admin';
   if(ui.lote){const ls=S.lacres.filter(l=>l.loteId===ui.lote&&l.status==='disponivel');
     return `<div class="crumb"><button data-a="lote" data-id="">Lacres</button>${ic('chev')}<span>Lote ${e(ui.lote)}</span></div>`+
     ph(`Etiquetas do lote ${e(ui.lote)}`,`${ls.length} etiquetas disponíveis para corte e afixação. A impressão está desligada nesta prévia; no sistema real esta folha vai para a impressora.`)+
-    `<div class="card card-b">${ls.length?`<div class="labels" data-req="RF06 RF04c">${ls.map(l=>etiqueta(l,true)).join('')}</div>`:'<p class="empty">Todas as etiquetas deste lote já foram usadas.</p>'}</div>`}
+    `<div class="card card-b">${ls.length?`<div class="labels" data-req="RF06 RF04c" data-db="lacre.numero_lacre lote_lacre.codigo_lote">${ls.map(l=>etiqueta(l,true)).join('')}</div>`:'<p class="empty">Todas as etiquetas deste lote já foram usadas.</p>'}</div>`}
   const list=S.lacres.filter(l=>(!ui.fs||l.status===ui.fs)&&(!ui.fe||l.emissor===ui.fe));
   return ph('Lacres','Estoque de lacres do Instituto e lacres externos registrados. O QR code carrega só o número do lacre.',
-    `<span style="display:inline-block" data-req="RF04 RF04b RNF05"><button class="btn pri" data-a="gerar" ${adm?'':'disabled'}>${ic('plus')}Gerar lote</button></span>`)+
-  `<div class="stats">${stat('','fs',ui.fs,S.lacres.length,'Todos os lacres','tag','blue','RF06b')}${stat('disponivel','fs',ui.fs,c('disponivel'),'Disponíveis','check','green','RF06b')}${stat('vinculado','fs',ui.fs,c('vinculado'),'Vinculados','lock','blue','RF06b')}${stat('rompido','fs',ui.fs,c('rompido'),'Rompidos','unlock','red','RF06b')}</div>
-  <div class="lots">${S.lotes.map(l=>{const ls=S.lacres.filter(x=>x.loteId===l.id),d=ls.filter(x=>x.status==='disponivel').length;return `<div class="card lot"><div class="cell"><span class="tile c-slate">${ic('tag')}</span><div><strong>Lote ${l.id}</strong><span class="small muted">${e(l.por)}, ${fmt(l.geradoEm)}</span></div></div>
-    <div class="bar"><i style="width:${Math.round(d/ls.length*100)}%"></i></div><div class="small muted" style="display:flex;justify-content:space-between;align-items:center"><span>${d} de ${ls.length} disponíveis</span><button class="btn ghost" data-a="lote" data-id="${l.id}" data-req="RF06 RF04c">Ver etiquetas</button></div></div>`}).join('')}</div>
-  <div class="card"><div class="tools"><h2 style="flex:1">Estoque</h2><label class="small muted" for="fe">Emissor</label><select id="fe" data-c="fe" data-req="RF06b"><option value="">Todos</option>${Object.entries(EMISSOR).map(([k,v])=>`<option value="${k}" ${ui.fe===k?'selected':''}>${v}</option>`).join('')}</select></div>
-  <div class="tw"><table><thead><tr><th>Número</th><th>Emissor</th><th>Status</th><th>Evidência</th><th>Detalhe</th><th></th></tr></thead><tbody>
+    `<span style="display:inline-block" data-req="RF04 RF04b RNF05" data-db="lote_lacre lacre.numero_lacre"><button class="btn pri" data-a="gerar" ${adm?'':'disabled'}>${ic('plus')}Gerar lote</button></span>`)+
+  `<div class="stats">${stat('','fs',ui.fs,S.lacres.length,'Todos os lacres','tag','blue','RF06b','lacre.situacao lacre.emissor')}${stat('disponivel','fs',ui.fs,c('disponivel'),'Disponíveis','check','green','RF06b','lacre.situacao lacre.emissor')}${stat('vinculado','fs',ui.fs,c('vinculado'),'Vinculados','lock','blue','RF06b','lacre.situacao lacre.emissor')}${stat('rompido','fs',ui.fs,c('rompido'),'Rompidos','unlock','red','RF06b','lacre.situacao lacre.emissor')}</div>
+  <div class="lots">${S.lotes.map(l=>{const ls=S.lacres.filter(x=>x.loteId===l.id),d=ls.filter(x=>x.status==='disponivel').length;return `<div class="card lot"><div class="cell" data-req="RF04" data-db="lote_lacre.codigo_lote lote_lacre.gerado_por_id lote_lacre.gerado_em"><span class="tile c-slate">${ic('tag')}</span><div><strong>Lote ${l.id}</strong><span class="small muted">${e(l.por)}, ${fmt(l.geradoEm)}</span></div></div>
+    <div class="small muted" style="margin-top:8px" data-req="RF04 RF06" data-db="lote_lacre.quantidade lote_lacre.primeiro_numero_lacre lote_lacre.ultimo_numero_lacre">${l.qtd} lacres: <span class="mono">${e(l.primeiro||'')}</span> a <span class="mono">${e(l.ultimo||'')}</span></div>
+    <div class="bar"><i style="width:${Math.round(d/ls.length*100)}%"></i></div><div class="small muted" style="display:flex;justify-content:space-between;align-items:center"><span>${d} de ${ls.length} disponíveis</span><button class="btn ghost" data-a="lote" data-id="${l.id}" data-req="RF06 RF04c" data-db="lacre.numero_lacre lacre.lote_id">Ver etiquetas</button></div></div>`}).join('')}</div>
+  <div class="card"><div class="tools"><h2 style="flex:1">Estoque</h2><label class="small muted" for="fe">Emissor</label><select id="fe" data-c="fe" data-req="RF06b" data-db="lacre.emissor"><option value="">Todos</option>${Object.entries(EMISSOR).map(([k,v])=>`<option value="${k}" ${ui.fe===k?'selected':''}>${v}</option>`).join('')}</select></div>
+  <div class="tw"><table><thead><tr><th data-req="RF04c RNF05" data-db="lacre.numero_lacre">Número</th><th data-req="RF04d RF05d" data-db="lacre.emissor lacre.lote_id">Emissor</th><th data-req="RF04b RF05b RF07" data-db="lacre.situacao">Situação</th><th data-req="RF05b RF05c" data-db="lacre.evidencia_id">Evidência</th><th data-req="RF05b RF07" data-db="lacre.vinculado_por_id lacre.vinculado_em lacre.rompido_por_id lacre.rompido_em lacre.motivo_rompimento">Detalhe</th><th></th></tr></thead><tbody>
   ${list.slice(0,150).map(l=>{const ev=evById(l.evidenciaId);return `<tr><td><span class="chip">${e(l.numero)}</span></td><td>${e(EMISSOR[l.emissor])}${l.loteId?`<br><span class="muted small">Lote ${l.loteId}</span>`:''}</td>
     <td>${pillS(...LST[l.status])}</td><td>${ev?`<button class="btn ghost mono" data-a="abrir" data-id="${ev.id}">${e(ev.codigo)}</button>`:'<span class="muted">Nenhuma</span>'}</td>
     <td class="small">${l.status==='rompido'?`${e(l.rompidoPor)}, ${fmt(l.rompidoEm)}<br><span class="muted">${e(l.motivo)}</span>`:l.status==='vinculado'?`${e(l.vinculadoPor)}, ${fmt(l.vinculadoEm)}`:'<span class="muted">Aguardando uso</span>'}</td>
-    <td>${l.status==='vinculado'?`<button class="btn danger" data-a="romper" data-id="${ev.id}" data-req="RF07 RF07b">Romper</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="6" class="empty">Nenhum lacre com esse filtro.</td></tr>'}
+    <td>${l.status==='vinculado'?`<button class="btn danger" data-a="romper" data-id="${ev.id}" data-req="RF07 RF07b" data-db="lacre.situacao lacre.rompido_por_id lacre.motivo_rompimento">Romper</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="6" class="empty">Nenhum lacre com esse filtro.</td></tr>'}
   </tbody></table></div>${list.length>150?`<div class="tl-foot">Mostrando 150 de ${list.length}. Use os filtros para refinar.</div>`:''}</div>`;
 },
 setores(){
   const adm=me().papel==='admin';
   return ph('Setores e usuários','O setor de cada pessoa decide quem pode confirmar o recebimento de uma evidência. O perfil decide quem pode analisar.',
-    `<span style="display:inline-block" data-req="RF10"><button class="btn pri" data-a="setor" data-id="" ${adm?'':'disabled'}>${ic('plus')}Novo setor</button></span>`)+
+    `<span style="display:inline-block" data-req="RF10" data-db="setor.nome setor.ativo"><button class="btn pri" data-a="setor" data-id="" ${adm?'':'disabled'}>${ic('plus')}Novo setor</button></span>`)+
   (adm?'':`<div class="banner c-blue">${ic('info')}<div>Só administradores criam e editam setores. Troque para Ana Ribeiro no seletor de usuário para testar.</div></div>`)+
-  `<div class="sectors">${S.setores.map(s=>{const us=S.users.filter(u=>u.setorId===s.id),n=S.evidencias.filter(x=>x.setorAtualId===s.id).length;return `<section class="card"><div class="card-h"><div class="cell"><span class="tile c-${s.ativo?'blue':'slate'}">${ic('building')}</span><div><strong>${e(s.nome)}</strong><span class="small muted">${n} ${n===1?'evidência':'evidências'} no setor</span></div></div>
-    <div class="cell" style="gap:6px">${pillS(s.ativo?'Ativo':'Inativo',s.ativo?'green':'slate')}${adm?`<button class="x" data-a="setor" data-id="${s.id}" data-req="RF10" aria-label="Editar ${e(s.nome)}">${ic('edit')}</button>`:''}</div></div>
-    ${us.length?`<ul class="people" data-req="RF11">${us.map(u=>`<li>${av(u,1)}<div><b>${e(u.nome)}</b><small>Matrícula ${e(u.matricula)}</small></div><span data-req="RF16" style="margin-left:auto">${pillS(PERFIL[u.papel],PCOR[u.papel])}</span></li>`).join('')}</ul>`:'<p class="card-b muted small">Nenhuma pessoa neste setor.</p>'}</section>`}).join('')}</div>`;
+  `<div class="sectors">${S.setores.map(s=>{const us=S.users.filter(u=>u.setorId===s.id),n=S.evidencias.filter(x=>x.setorAtualId===s.id).length;return `<section class="card"><div class="card-h"><div class="cell" data-req="RF10" data-db="setor.nome setor.ativo"><span class="tile c-${s.ativo?'blue':'slate'}">${ic('building')}</span><div><strong>${e(s.nome)}</strong><span class="small muted">${n} ${n===1?'evidência':'evidências'} no setor</span></div></div>
+    <div class="cell" style="gap:6px">${pillS(s.ativo?'Ativo':'Inativo',s.ativo?'green':'slate')}${adm?`<button class="x" data-a="setor" data-id="${s.id}" data-req="RF10" data-db="setor.nome setor.ativo" aria-label="Editar ${e(s.nome)}">${ic('edit')}</button>`:''}</div></div>
+    ${us.length?`<ul class="people">${us.map(u=>`<li data-req="RF01 RF11" data-db="usuario.nome usuario.matricula usuario.email usuario.setor_id">${av(u,1)}<div><b>${e(u.nome)}</b><small>Matrícula ${e(u.matricula)} · ${e(u.email||'')}</small></div><span data-req="RF16" data-db="usuario.perfil" style="margin-left:auto">${pillS(PERFIL[u.papel],PCOR[u.papel])}</span></li>`).join('')}</ul>`:'<p class="card-b muted small">Nenhuma pessoa neste setor.</p>'}</section>`}).join('')}</div>`;
+},
+banco(){
+  const q=(ui.dq||'').trim().toLowerCase();
+  const tabs=DBORD.map(t=>{const cols=Object.entries(DBD[t]).filter(([c])=>c!=='_').filter(([c,v])=>!q||(t+'.'+c+' '+v.join(' ')).toLowerCase().includes(q));return [t,cols]}).filter(([t,cols])=>cols.length||(!q));
+  const total=DBORD.reduce((a,t)=>a+Object.keys(DBD[t]).length-1,0);
+  const chips=r=>String(r).split(/,\s*/).map(id=>{id=id.trim();return /^RN?F[\w-]+$/.test(id)?`<span class="reqchip" data-req="${id}">${id}</span>`:`<span class="reqchip">${e(id)}</span>`}).join('');
+  return ph('Banco de dados',`${DBORD.length} tabelas e ${total} colunas do PostgreSQL, com os requisitos que cada coluna atende. Os mesmos nomes aparecem nas caixas desta demo, ao passar o mouse sobre cada funcionalidade.`)+
+  `<div class="card" style="margin-bottom:16px"><div class="tools" style="border:0"><div class="search">${ic('search')}<input type="search" data-q="dq" value="${e(ui.dq||'')}" placeholder="Buscar coluna, tabela ou requisito, por exemplo foto ou RF07" aria-label="Buscar no banco de dados"></div><span class="small muted">O script completo, com regras e testes, está em database/schema.sql.</span></div></div>
+  <div id="dblist">${dbTabs(tabs,chips)}</div>`;
 },
 requisitos(){
   const all=[...RF.flatMap(g=>g[1]),...RNF,...SUG],n=k=>all.filter(r=>!k||r[1]===k).length,nf=RF.reduce((a,g)=>a+g[1].length,0);
@@ -2881,6 +2917,7 @@ requisitos(){
   <div id="reqlist">${reqList()}</div>`;
 }};
 
+const ACTDB={lacre:'lacre.evidencia_id lacre.situacao lacre.vinculado_por_id lacre.hash_foto_na_associacao cadeia_custodia.lacre_id',receber:'evidencia.setor_atual_id evidencia.situacao cadeia_custodia.registrado_por_id cadeia_custodia.setor_atual_id',assumir:'evidencia.perito_responsavel_id evidencia.situacao cadeia_custodia.acao',concluir:'evidencia.perito_responsavel_id evidencia.situacao cadeia_custodia.acao',encaminhar:'evidencia.setor_destino_pendente_id evidencia.destino_externo_nome cadeia_custodia.setor_destino_id cadeia_custodia.nome_responsavel_posse',armazenar:'evidencia.setor_atual_id cadeia_custodia.setor_destino_id',devolver:'evidencia.situacao cadeia_custodia.destino_externo_nome cadeia_custodia.endereco_local',romper:'lacre.situacao lacre.rompido_por_id lacre.motivo_rompimento lacre.rompido_em'};
 const ACTREQ={lacre:'RF05 RF05b RF05c',receber:'RF14 RF15 RF15b',assumir:'RF17 RF17b RF18',concluir:'RF19 RF19b',encaminhar:'RF12 RF13 RF13b',armazenar:'RF08b',devolver:'RF13e',romper:'RF07 RF07b'};
 function acoes(ev){
   const u=me(),a=[],add=(id,label,icon,why,pri)=>a.push({id,label,icon,why,pri});
@@ -2912,38 +2949,40 @@ function passos(ev){
 function detalhe(ev){
   const c=S.cadeia[ev.id]||[],v=S.verif[ev.id],l=lacreAtivo(ev),oc=S.ocorrencias.find(o=>o.id===ev.ocorrenciaId),hist=S.lacres.filter(x=>x.evidenciaId===ev.id&&x.status==='rompido'),bl=bloqueada(ev),ac=acoes(ev),u=me();
   const falhas=v?c.filter(r=>v.itens[r.seq]&&!v.itens[r.seq].ok):[];
-  const integ=!v?`<div class="integ c-slate" data-req="RF21">${ic('info')}<div><b>Ainda não verificada</b><span class="small">A verificação recalcula o SHA-256 de cada registro e compara com o valor guardado.</span></div></div>`
-    :falhas.length?`<div class="banner tape" style="margin:18px 20px 0" data-req="RF22">${ic('alert')}<div><b>Cadeia adulterada</b>${falhas.length===1?'O registro '+falhas[0].seq+' não confere':'Os registros '+falhas.map(r=>r.seq).join(', ')+' não conferem'} com o hash guardado. Verificado em ${fmt(v.em)}.</div></div>`
-    :`<div class="integ c-green" data-req="RF21">${ic('shield')}<div><b>Cadeia íntegra</b><span class="small">Os ${Object.keys(v.itens).length} registros conferem com os hashes guardados. Verificado em ${fmt(v.em)}.</span></div></div>`;
+  const integ=!v?`<div class="integ c-slate" data-req="RF21" data-db="verificacao_integridade">${ic('info')}<div><b>Ainda não verificada</b><span class="small">A verificação recalcula o SHA-256 de cada registro e compara com o valor guardado.</span></div></div>`
+    :falhas.length?`<div class="banner tape" style="margin:18px 20px 0" data-req="RF22" data-db="verificacao_integridade.registros_divergentes verificacao_divergencia.numero_sequencia verificacao_divergencia.tipo_divergencia">${ic('alert')}<div><b>Cadeia adulterada</b>${falhas.length===1?'O registro '+falhas[0].seq+' não confere':'Os registros '+falhas.map(r=>r.seq).join(', ')+' não conferem'} com o hash guardado. Verificado em ${fmt(v.em)}.</div></div>`
+    :`<div class="integ c-green" data-req="RF21 RF23" data-db="verificacao_integridade.cadeia_integra verificacao_integridade.total_registros verificacao_integridade.executada_por_id verificacao_integridade.executada_em">${ic('shield')}<div><b>Cadeia íntegra</b><span class="small">Os ${Object.keys(v.itens).length} registros conferem com os hashes guardados. Verificado por ${e(v.por||'')} em ${fmt(v.em)}.</span></div></div>`;
   return `<div class="crumb"><button data-a="abrir" data-id="">Evidências</button>${ic('chev')}<span>${e(ev.codigo)}</span></div>
   ${bl?`<div class="banner tape" data-req="RF07b RF19b">${ic('alert')}<div><b>Sem lacre ativo</b>Todas as movimentações estão bloqueadas até um novo lacre ser associado.${ev.status==='em_analise'?' Para concluir a análise, associe antes o novo lacre.':''}</div>${ac[0]&&!ac[0].why?`<button class="btn" data-a="lacre" data-id="${ev.id}" data-req="RF05 RF07c">${ic('lock')}Associar novo lacre</button>`:''}</div>`:''}
-  <section class="card hero"><div class="hero-top"><div><span class="chip">${e(ev.codigo)}</span><h1>${e(ev.descricao)}</h1></div>${pill(ev)}</div>
-    <dl class="kv"><div><dt>Tipo</dt><dd>${e(ev.tipo)}</dd></div><div><dt>Onde está</dt><dd>${e(onde(ev))}</dd></div><div><dt>Encontrada em</dt><dd>${e(ev.endereco)}</dd></div><div><dt>Coleta</dt><dd>${e(ev.coletadoPor)}, ${fmt(ev.coletadoEm)}</dd></div></dl>
-    ${passos(ev)}</section>
-  <div class="grid"><section class="card"><div class="card-h"><div><h2>Cadeia de custódia</h2><span class="small muted">${c.length} registros encadeados por hash SHA-256</span></div>
-      <div class="cell" style="gap:8px"><button class="btn" data-a="relatorio" data-req="RF23">${ic('file')}Relatório</button><button class="btn pri" data-a="verificar" data-req="RF21 RF22">${ic('shield')}Verificar integridade</button></div></div>
+  <section class="card hero"><div class="hero-top"><div data-req="RF02" data-db="evidencia.codigo evidencia.descricao"><span class="chip">${e(ev.codigo)}</span><h1>${e(ev.descricao)}</h1></div>${pill(ev)}</div>
+    <dl class="kv"><div data-req="RF02" data-db="evidencia.tipo_evidencia"><dt>Tipo</dt><dd>${e(ev.tipo)}</dd></div><div data-req="RF13 RF14 RF17" data-db="evidencia.setor_atual_id evidencia.setor_destino_pendente_id evidencia.destino_externo_nome evidencia.perito_responsavel_id"><dt>Onde está</dt><dd>${e(onde(ev))}</dd></div><div data-req="RF02" data-db="evidencia.endereco_coleta evidencia.latitude_coleta evidencia.longitude_coleta"><dt>Encontrada em</dt><dd>${e(ev.endereco)}${ev.lat?`<br><span class="mono small muted" style="font-weight:400">${e(ev.lat)}, ${e(ev.lng)}</span>`:''}</dd></div><div data-req="RF02 RF08c" data-db="evidencia.coletado_por_id evidencia.coletado_em"><dt>Coleta</dt><dd>${e(ev.coletadoPor)}, ${fmt(ev.coletadoEm)}</dd></div></dl>
+    <div data-req="RF12c RF18 RF19" data-db="evidencia.situacao">${passos(ev)}</div></section>
+  <div class="grid"><section class="card"><div class="card-h"><div><h2>Cadeia de custódia</h2><span class="small muted" data-req="RF09 RF20" data-db="cadeia_custodia">${c.length} registros encadeados por hash SHA-256</span></div>
+      <div class="cell" style="gap:8px"><button class="btn" data-a="relatorio" data-req="RF23" data-db="verificacao_integridade.hash_ultimo_registro log_acesso.acao_acesso">${ic('file')}Relatório</button><button class="btn pri" data-a="verificar" data-req="RF21 RF22" data-db="verificacao_integridade.cadeia_integra verificacao_integridade.total_registros verificacao_divergencia.numero_sequencia">${ic('shield')}Verificar integridade</button></div></div>
     ${integ}
     <ol class="tl">${c.map(r=>{const k=v&&v.itens[r.seq],m=ACAO[r.acao]||['box','slate'];return `<li class="${k&&!k.ok?'bad':''}"><span class="node c-${m[1]}">${ic(m[0])}</span><div class="rec">
-      <div class="rec-h"><h4>${r.seq}. ${e(r.acao)}${r.destino?' para '+e(r.destino):''}</h4><span class="cell" style="gap:8px">${k?`<span class="vf c-${k.ok?'green':'red'}">${k.ok?'Confere':'Divergente'}</span>`:''}<time>${fmt(r.dataHora)}</time></span></div>
-      <div class="who">${e(r.responsavel)}${r.setorId?', '+e(sn(r.setorId)):''}${r.local?', '+e(r.local):''}</div>
-      ${r.observacao?`<p class="obs">${e(r.observacao)}</p>`:''}
-      <div class="hash" data-req="RF09 RF20"><span>Hash anterior</span><code title="${r.hashAnterior}">${short(r.hashAnterior)}</code>${ic('link')}<span>Hash do registro</span><code title="${r.hashRegistro}">${short(r.hashRegistro)}</code></div>
+      <div class="rec-h"><h4 data-req="RF08 RF13g" data-db="cadeia_custodia.numero_sequencia cadeia_custodia.acao cadeia_custodia.setor_destino_id cadeia_custodia.destino_externo_nome">${r.seq}. ${e(r.acao)}${r.destino?' para '+e(r.destino):''}</h4><span class="cell" style="gap:8px">${k?`<span class="vf c-${k.ok?'green':'red'}">${k.ok?'Confere':'Divergente'}</span>`:''}<time data-req="RF08 RNF03" data-db="cadeia_custodia.data_hora_registro">${fmt(r.dataHora)}</time></span></div>
+      <div class="who" data-req="RF08 RF12b RF14" data-db="cadeia_custodia.nome_responsavel_posse cadeia_custodia.registrado_por_id cadeia_custodia.setor_atual_id cadeia_custodia.endereco_local">${e(r.responsavel)}${r.registradoPor&&r.registradoPor!==r.responsavel?` (registrado por ${e(r.registradoPor)})`:''}${r.setorId?', '+e(sn(r.setorId)):''}${r.local?', '+e(r.local):''}</div>
+      ${r.observacao?`<p class="obs" data-req="RF08" data-db="cadeia_custodia.observacao${r.acao==='Coletado'?' cadeia_custodia.cadastro_fora_do_local cadeia_custodia.justificativa_fora_local':''}">${e(r.observacao)}</p>`:''}
+      <div class="small muted" style="margin-top:4px" data-req="RF13f RF13c" data-db="cadeia_custodia.gps_obtido cadeia_custodia.gps_latitude cadeia_custodia.gps_longitude cadeia_custodia.gps_precisao_metros">GPS não obtido nesta prévia</div>
+      <div class="hash" data-req="RF09 RF20" data-db="cadeia_custodia.hash_registro_anterior cadeia_custodia.hash_registro"><span>Hash anterior</span><code title="${r.hashAnterior}">${short(r.hashAnterior)}</code>${ic('link')}<span>Hash do registro</span><code title="${r.hashRegistro}">${short(r.hashRegistro)}</code></div>
       ${k&&!k.ok?`<div class="badmsg">${k.elo?'O conteúdo deste registro foi alterado depois de criado. O hash recalculado é <span class="mono">'+short(k.calc)+'</span>, diferente do guardado.':'O elo com o registro anterior foi quebrado: o hash anterior guardado aqui não é o do registro '+(r.seq-1)+'.'}</div>`:''}
     </div></li>`}).join('')}</ol>
-    <div class="tl-foot"><span>Registros não podem ser editados nem apagados pelo sistema. ${e(GEO)}.</span><button class="btn ghost" data-a="adulterar" data-req="RF22 RNF03">Simular adulteração no banco</button></div></section>
+    <div class="tl-foot"><span>Registros não podem ser editados nem apagados pelo sistema. ${e(GEO)}.</span><button class="btn ghost" data-a="adulterar" data-req="RF22 RNF03" data-db="cadeia_custodia.hash_registro verificacao_divergencia.tipo_divergencia">Simular adulteração no banco</button></div></section>
   <aside class="stack">
     <section class="card"><div class="card-h"><h2>Ações disponíveis</h2></div><div class="card-b">
       <div class="cell" style="margin-bottom:14px">${av(u,1)}<span class="small"><b style="color:var(--ink)">${e(u.nome)}</b><br><span class="muted">${PERFIL[u.papel]}, ${e(sn(u.setorId))}</span></span></div>
-      ${ac.length?ac.map(x=>`<div class="act"${rq(x.id==='lacre'&&bl?'RF05 RF07c RF19b':x.id==='receber'&&ev.destinoExterno?'RF13c RF13d':ACTREQ[x.id])}><button class="btn block ${x.pri?'pri':''} ${x.id==='romper'?'danger':''}" data-a="${x.id}" data-id="${ev.id}" ${x.why?'disabled':''}>${ic(x.icon)}${x.label}</button>${x.why?`<p class="why">${ic('lock')}<span>${e(x.why)}</span></p>`:''}</div>`).join(''):'<p class="muted">A evidência foi devolvida. A cadeia está encerrada.</p>'}
+      ${ac.length?ac.map(x=>`<div class="act"${rq(x.id==='lacre'&&bl?'RF05 RF07c RF19b':x.id==='receber'&&ev.destinoExterno?'RF13c RF13d':ACTREQ[x.id],x.id==='receber'&&ev.destinoExterno?'cadeia_custodia.acao cadeia_custodia.endereco_local cadeia_custodia.gps_obtido evidencia.situacao':ACTDB[x.id])}><button class="btn block ${x.pri?'pri':''} ${x.id==='romper'?'danger':''}" data-a="${x.id}" data-id="${ev.id}" ${x.why?'disabled':''}>${ic(x.icon)}${x.label}</button>${x.why?`<p class="why">${ic('lock')}<span>${e(x.why)}</span></p>`:''}</div>`).join(''):'<p class="muted">A evidência foi devolvida. A cadeia está encerrada.</p>'}
       <p class="hint" style="margin-top:12px">Troque o usuário no menu para testar as regras de setor e perfil.</p></div></section>
     <section class="card"><div class="card-h"><h2>Lacre</h2>${l?pillS('Ativo','green'):bl?pillS('Rompido','red'):pillS('Sem lacre','slate')}</div><div class="card-b">
-      ${l?etiqueta(l,true)+`<p class="small muted" style="margin-top:10px">Vinculado por ${e(l.vinculadoPor)} em ${fmt(l.vinculadoEm)}.</p>
-        ${l.refs.length?'<p class="small" style="margin-top:10px"><b>Lacres externos presentes na evidência</b></p><ul class="small" style="margin:4px 0 0;padding-left:18px">'+l.refs.map(r=>`<li>${e(EMISSOR[r.emissor])}, nº ${e(r.numero)}${r.obs?': '+e(r.obs):''}</li>`).join('')+'</ul>':''}
-        ${l.externo?'':`<button class="btn ghost small" style="margin:8px 0 0 -8px" data-a="ref" data-id="${l.id}" data-req="RF04e">${ic('plus')}Referência de lacre externo</button>`}`:`<p class="muted">${bl?'O último lacre foi rompido e ainda não há substituto.':'Nenhum lacre foi associado a esta evidência.'}</p>`}
-      ${hist.length?`<details><summary>Histórico de lacres rompidos (${hist.length})</summary>${hist.map(x=>`<div style="margin-top:10px">${etiqueta(x)}<p class="small muted" style="margin-top:6px">${e(x.rompidoPor)}, ${fmt(x.rompidoEm)}. ${e(x.motivo)}</p></div>`).join('')}</details>`:''}</div></section>
-    <section class="card"><div class="card-h"><h2>Ocorrência e arquivo</h2></div><div class="card-b"><dl class="dl">
-      ${oc?`<div><dt>Código GIGANTE</dt><dd>${e(oc.gigante)||'Não informado'}</dd></div>${oc.bos.length?`<div><dt>B.O.(s)</dt><dd>${e(oc.bos.join(', '))}</dd></div>`:''}${oc.delegacia?`<div><dt>Delegacia de origem</dt><dd>${e(oc.delegacia)}</dd></div>`:''}${oc.crime?`<div><dt>Tipo de crime</dt><dd>${e(oc.crime)}</dd></div>`:''}${oc.oficio?`<div><dt>Nº de ofício</dt><dd>${e(oc.oficio)}</dd></div>`:''}`:'<div><dt>Ocorrência</dt><dd>Nenhuma vinculada</dd></div>'}
-      <div><dt>Foto</dt><dd>${ev.hashFoto?`${e(ev.fotoNome)}<br><span class="mono small muted" style="font-weight:400">SHA-256 ${e(ev.hashFoto)}</span>`:'Sem foto anexada'}</dd></div></dl></div></section>
+      ${l?`<div data-req="RF04c RF05d" data-db="lacre.numero_lacre lacre.emissor">${etiqueta(l,true)}</div><p class="small muted" style="margin-top:10px" data-req="RF05b" data-db="lacre.vinculado_por_id lacre.vinculado_em lacre.hash_foto_na_associacao">Vinculado por ${e(l.vinculadoPor)} em ${fmt(l.vinculadoEm)}.${l.hashNoMomento?`<br>Hash da foto na associação: <span class="mono">${short(l.hashNoMomento)}</span>`:''}</p>
+        ${l.refs.length?'<p class="small" style="margin-top:10px" data-req="RF04e" data-db="lacre_referencia_externa.emissor lacre_referencia_externa.numero_lacre_externo lacre_referencia_externa.observacao"><b>Lacres externos presentes na evidência</b></p><ul class="small" style="margin:4px 0 0;padding-left:18px">'+l.refs.map(r=>`<li>${e(EMISSOR[r.emissor])}, nº ${e(r.numero)}${r.obs?': '+e(r.obs):''}</li>`).join('')+'</ul>':''}
+        ${l.externo?'':`<button class="btn ghost small" style="margin:8px 0 0 -8px" data-a="ref" data-id="${l.id}" data-req="RF04e" data-db="lacre_referencia_externa">${ic('plus')}Referência de lacre externo</button>`}`:`<p class="muted">${bl?'O último lacre foi rompido e ainda não há substituto.':'Nenhum lacre foi associado a esta evidência.'}</p>`}
+      ${hist.length?`<details data-req="RF07" data-db="lacre.rompido_por_id lacre.motivo_rompimento lacre.rompido_em"><summary>Histórico de lacres rompidos (${hist.length})</summary>${hist.map(x=>`<div style="margin-top:10px">${etiqueta(x)}<p class="small muted" style="margin-top:6px">${e(x.rompidoPor)}, ${fmt(x.rompidoEm)}. ${e(x.motivo)}</p></div>`).join('')}</details>`:''}</div></section>
+    <section class="card"><div class="card-h"><h2>Ocorrência</h2></div><div class="card-b"><dl class="dl">
+      ${oc?`<div data-req="RF02c RF02d" data-db="ocorrencia.codigo_gigante"><dt>Código GIGANTE</dt><dd>${e(oc.gigante)||'Não informado'}</dd></div><div data-req="RF02b" data-db="ocorrencia.data_hora_ocorrencia"><dt>Data e hora do fato</dt><dd>${oc.dataHora?fmt(oc.dataHora):'Não informada'}</dd></div><div data-req="RF02b RF02c" data-db="ocorrencia_bo.numero_bo"><dt>B.O.(s)</dt><dd>${oc.bos.length?e(oc.bos.join(', ')):'Não informado'}</dd></div><div data-req="RF02b" data-db="ocorrencia.delegacia_origem"><dt>Delegacia de origem</dt><dd>${e(oc.delegacia)||'Não informada'}</dd></div><div data-req="RF02b" data-db="ocorrencia.tipo_crime"><dt>Tipo de crime</dt><dd>${e(oc.crime)||'Não informado'}</dd></div><div data-req="RF02b" data-db="ocorrencia.numero_oficio"><dt>Nº de ofício</dt><dd>${e(oc.oficio)||'Não informado'}</dd></div><div data-req="RF02b" data-db="ocorrencia.endereco_ocorrencia"><dt>Endereço do fato</dt><dd>${e(oc.endereco)||'Não informado'}</dd></div>`:'<div data-req="RF02e" data-db="evidencia.ocorrencia_id"><dt>Ocorrência</dt><dd>Nenhuma vinculada</dd></div>'}</dl></div></section>
+    <section class="card"><div class="card-h"><h2>Arquivo da foto</h2></div><div class="card-b"><dl class="dl">
+      ${ev.hashFoto?`<div data-req="RF02" data-db="evidencia.foto_nome_arquivo"><dt>Nome do arquivo</dt><dd>${e(ev.fotoNome)}</dd></div><div data-req="RF02" data-db="evidencia.foto_tipo_arquivo"><dt>Tipo do arquivo</dt><dd class="mono">${e(ev.fotoTipo||'não informado')}</dd></div><div data-req="RF02" data-db="evidencia.foto_tamanho_bytes"><dt>Tamanho</dt><dd>${ev.fotoTamanho?tam(ev.fotoTamanho):'não informado'}</dd></div><div data-req="RF02" data-db="evidencia.foto_caminho_arquivo"><dt>Onde fica guardada</dt><dd class="mono small">${e(ev.fotoCaminho||'evidencias/'+ev.codigo+'/'+ev.fotoNome)}</dd></div><div data-req="RF03 RNF04" data-db="evidencia.foto_hash_sha256"><dt>SHA-256 da foto</dt><dd class="mono small" style="font-weight:400">${e(ev.hashFoto)}</dd></div>`:'<div data-req="RF02 RF03" data-db="evidencia.foto_nome_arquivo evidencia.foto_hash_sha256"><dt>Foto</dt><dd>Sem foto anexada</dd></div>'}</dl></div></section>
   </aside></div>`;
 }
 
@@ -3045,11 +3084,11 @@ const head=(t,sub,n)=>`<div class="dh"><div><h3>${t}</h3>${sub?`<p>${sub}</p>`:'
 function form(f,o){const n=o.n||1;return `<form data-f="${f}" data-id="${o.id||''}">${head(o.t,o.sub,n)}<div class="db">${o.body}<p class="err" role="alert" hidden></p></div>
   <div class="df">${o.extra||''}<button type="button" class="btn" data-a="${o.cancelA||'close'}" data-n="${n}">${o.cancel||'Cancelar'}</button><button class="btn pri ${o.danger?'':''}">${o.ok}</button></div></form>`}
 const selSetor=(name,sel)=>`<select name="${name}" id="${name}" required>${S.setores.filter(s=>s.ativo).map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${e(s.nome)}</option>`).join('')}</select>`;
-const campoLacre=`<fieldset class="f" data-req="RF05 RF05c RF05d"><legend>Origem do lacre afixado</legend><div class="opts">
+const campoLacre=`<fieldset class="f" data-req="RF05 RF05c RF05d" data-db="lacre.emissor"><legend>Origem do lacre afixado</legend><div class="opts">
   <label class="opt"><input type="radio" name="origem" value="instituto" checked><span>Lacre do Instituto<br><span class="hint">Etiqueta com QR code</span></span></label>
   <label class="opt"><input type="radio" name="origem" value="externo"><span>Lacre externo<br><span class="hint">Fabricante, SENASP/MJ, SSP</span></span></label></div></fieldset>
-  <div class="two"><div class="f" data-ext hidden><label for="emissor">Emissor</label><select name="emissor" id="emissor">${Object.entries(EMISSOR).filter(([k])=>k!=='instituto').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
-  <div class="f"><label for="numero">Número do lacre</label><input name="numero" id="numero" list="disp" autocomplete="off"><p class="hint" data-inst>A leitura por câmera não funciona nesta prévia. Digite o número da etiqueta.</p></div></div>
+  <div class="two"><div class="f" data-ext hidden data-req="RF05d" data-db="lacre.emissor"><label for="emissor">Emissor</label><select name="emissor" id="emissor">${Object.entries(EMISSOR).filter(([k])=>k!=='instituto').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+  <div class="f" data-req="RF05 RF05c RF05e" data-db="lacre.numero_lacre"><label for="numero">Número do lacre</label><input name="numero" id="numero" list="disp" autocomplete="off"><p class="hint" data-inst>A leitura por câmera não funciona nesta prévia. Digite o número da etiqueta.</p></div></div>
   <datalist id="disp"></datalist>`;
 function fillDisp(){const d=$('#disp');if(d)d.innerHTML=S.lacres.filter(l=>!l.externo&&l.status==='disponivel').slice(0,30).map(l=>`<option value="${l.numero}">`).join('')}
 
@@ -3063,81 +3102,82 @@ const A={
   draftOc=null;const n=String(S.evidencias.length+1).padStart(4,'0');
   modal(form('nova',{t:'Registrar evidência',sub:'A movimentação "Coletado" é criada automaticamente ao salvar.',ok:'Registrar evidência',body:`
    <p class="fs">Identificação</p>
-   <div class="two"><div class="f"><label for="codigo">Código</label><input name="codigo" id="codigo" value="EV-2026-${n}" required></div>
-   <div class="f"><label for="tipo">Tipo</label><select name="tipo" id="tipo">${TIPOS.map(t=>`<option>${t}</option>`).join('')}</select></div></div>
-   <div class="f"><label for="descricao">Descrição</label><input name="descricao" id="descricao" required></div>
-   <div class="f" data-req="RF03"><label for="foto">Foto da evidência</label><input type="file" name="foto" id="foto" accept="image/*"><p class="hint">O SHA-256 do arquivo é calculado ao salvar. Opcional neste protótipo.</p></div>
+   <div class="two"><div class="f" data-req="RF02" data-db="evidencia.codigo"><label for="codigo">Código</label><input name="codigo" id="codigo" value="EV-2026-${n}" required></div>
+   <div class="f" data-req="RF02" data-db="evidencia.tipo_evidencia"><label for="tipo">Tipo</label><select name="tipo" id="tipo">${TIPOS.map(t=>`<option>${t}</option>`).join('')}</select></div></div>
+   <div class="f" data-req="RF02" data-db="evidencia.descricao"><label for="descricao">Descrição</label><input name="descricao" id="descricao" required></div>
+   <div class="f" data-req="RF02 RF03" data-db="evidencia.foto_nome_arquivo evidencia.foto_tipo_arquivo evidencia.foto_tamanho_bytes evidencia.foto_caminho_arquivo evidencia.foto_hash_sha256"><label for="foto">Foto da evidência</label><input type="file" name="foto" id="foto" accept="image/jpeg,image/png,image/heic,image/webp"><p class="hint" id="fotoinfo">Aceita JPEG, PNG, HEIC ou WebP. O tipo, o tamanho e o SHA-256 do arquivo são guardados ao salvar. Opcional neste protótipo.</p></div>
    <p class="fs">Local da coleta</p>
-   <div class="f"><label for="endereco">Endereço onde foi encontrada</label><input name="endereco" id="endereco" required></div>
-   <fieldset class="f" data-req="RF02b"><legend>Você está no local indicado no endereço?</legend><div class="opts">
+   <div class="f" data-req="RF02" data-db="evidencia.endereco_coleta"><label for="endereco">Endereço onde foi encontrada</label><input name="endereco" id="endereco" required></div>
+   <div class="two" data-req="RF02" data-db="evidencia.latitude_coleta evidencia.longitude_coleta"><div class="f"><label for="lat">Latitude do local</label><input name="lat" id="lat" inputmode="decimal" placeholder="-3.131270"></div><div class="f"><label for="lng">Longitude do local</label><input name="lng" id="lng" inputmode="decimal" placeholder="-60.023410"></div></div>
+   <fieldset class="f" data-req="RF02b RF13f" data-db="cadeia_custodia.cadastro_fora_do_local cadeia_custodia.gps_obtido cadeia_custodia.gps_latitude cadeia_custodia.gps_longitude"><legend>Você está no local indicado no endereço?</legend><div class="opts">
     <label class="opt"><input type="radio" name="fora" value="nao" checked><span>Sim, estou no local</span></label>
     <label class="opt"><input type="radio" name="fora" value="sim"><span>Não, cadastro de outro lugar</span></label></div></fieldset>
-   <div class="f" data-just hidden data-req="RF02b"><label for="justificativa">Por que o cadastro está sendo feito fora do local?</label><textarea name="justificativa" id="justificativa"></textarea><p class="hint">Fica gravado de forma permanente na movimentação "Coletado".</p></div>
+   <div class="f" data-just hidden data-req="RF02b" data-db="cadeia_custodia.justificativa_fora_local"><label for="justificativa">Por que o cadastro está sendo feito fora do local?</label><textarea name="justificativa" id="justificativa"></textarea><p class="hint">Fica gravado de forma permanente na movimentação "Coletado".</p></div>
    <p class="fs">Lacre</p>${campoLacre}
    <p class="fs">Ocorrência</p>
-   <div class="ocbox" data-req="RF02b-oc RF02c RF02d RF02e"><span id="ocres" class="muted">Nenhuma ocorrência vinculada</span><button type="button" class="btn" data-a="oc">${ic('link')}Vincular ocorrência</button></div>`}));fillDisp();
+   <div class="ocbox" data-req="RF02b-oc RF02c RF02d RF02e" data-db="evidencia.ocorrencia_id ocorrencia"><span id="ocres" class="muted">Nenhuma ocorrência vinculada</span><button type="button" class="btn" data-a="oc">${ic('link')}Vincular ocorrência</button></div>`}));fillDisp();
  },
  oc(){const d=draftOc||{};
   modal(form('oc',{n:2,t:'Vincular ocorrência',sub:'Todos os campos são opcionais. Se o código GIGANTE já existir, a evidência entra na mesma ocorrência.',ok:'Usar estes dados',body:`
-   <div class="two"><div class="f" data-req="RF02c RF02d"><label for="gigante">Código GIGANTE/SSP</label><input name="gigante" id="gigante" value="${e(d.gigante)}" list="gigs"><datalist id="gigs">${S.ocorrencias.filter(o=>o.gigante).map(o=>`<option value="${e(o.gigante)}">`).join('')}</datalist></div>
-   <div class="f"><label for="oficio">Nº de ofício</label><input name="oficio" id="oficio" value="${e(d.oficio)}"></div>
-   <div class="f"><label for="delegacia">Delegacia de origem</label><input name="delegacia" id="delegacia" value="${e(d.delegacia)}"></div>
-   <div class="f"><label for="crime">Tipo de crime</label><select name="crime" id="crime"><option value="">Não informado</option>${CRIMES.map(c=>`<option ${d.crime===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
-   <div class="f"><label for="bos">B.O.(s)</label><input name="bos" id="bos" value="${e(d.bos)}"><p class="hint">Separe vários números com vírgula.</p></div>
-   <div class="f"><label for="ocend">Endereço da ocorrência</label><input name="endereco" id="ocend" value="${e(d.endereco)}"></div>
-   <div class="f"><label for="ocobs">Observações</label><textarea name="obs" id="ocobs">${e(d.obs)}</textarea></div>`}),2)},
- gerar(){modal(form('gerar',{t:'Gerar lote de lacres',sub:'Os lacres nascem disponíveis, numerados pelo sistema e sem vínculo com evidência.',ok:'Gerar lote',body:`<div class="f" data-req="RF04 RF04b"><label for="qtd">Quantidade</label><select name="qtd" id="qtd"><option>10</option><option>50</option><option>100</option></select></div>`}))},
+   <div class="two"><div class="f" data-req="RF02c RF02d" data-db="ocorrencia.codigo_gigante"><label for="gigante">Código GIGANTE/SSP</label><input name="gigante" id="gigante" value="${e(d.gigante)}" list="gigs"><datalist id="gigs">${S.ocorrencias.filter(o=>o.gigante).map(o=>`<option value="${e(o.gigante)}">`).join('')}</datalist></div>
+   <div class="f" data-req="RF02b" data-db="ocorrencia.numero_oficio"><label for="oficio">Nº de ofício</label><input name="oficio" id="oficio" value="${e(d.oficio)}"></div>
+   <div class="f" data-req="RF02b" data-db="ocorrencia.delegacia_origem"><label for="delegacia">Delegacia de origem</label><input name="delegacia" id="delegacia" value="${e(d.delegacia)}"></div>
+   <div class="f" data-req="RF02b" data-db="ocorrencia.tipo_crime"><label for="crime">Tipo de crime</label><select name="crime" id="crime"><option value="">Não informado</option>${CRIMES.map(c=>`<option ${d.crime===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
+   <div class="f" data-req="RF02b RF02c" data-db="ocorrencia_bo.numero_bo"><label for="bos">B.O.(s)</label><input name="bos" id="bos" value="${e(d.bos)}"><p class="hint">Separe vários números com vírgula.</p></div>
+   <div class="two"><div class="f" data-req="RF02b" data-db="ocorrencia.endereco_ocorrencia"><label for="ocend">Endereço do fato</label><input name="endereco" id="ocend" value="${e(d.endereco)}"></div><div class="f" data-req="RF02b" data-db="ocorrencia.data_hora_ocorrencia"><label for="ocdh">Data e hora do fato</label><input type="datetime-local" name="dataHora" id="ocdh" value="${e(d.dataHora)}"></div></div>
+   <div class="f" data-req="RF02b" data-db="ocorrencia.observacoes"><label for="ocobs">Observações</label><textarea name="obs" id="ocobs">${e(d.obs)}</textarea></div>`}),2)},
+ gerar(){modal(form('gerar',{t:'Gerar lote de lacres',sub:'Os lacres nascem disponíveis, numerados pelo sistema e sem vínculo com evidência.',ok:'Gerar lote',body:`<div class="f" data-req="RF04 RF04b" data-db="lote_lacre.quantidade lacre.numero_lacre lacre.situacao"><label for="qtd">Quantidade</label><select name="qtd" id="qtd"><option>10</option><option>50</option><option>100</option></select></div>`}))},
  setor(d){const s=setor(d.id);modal(form('setor',{id:d.id,t:s?'Editar setor':'Novo setor',ok:'Salvar setor',extra:s?`<button type="button" class="btn danger" data-a="rmsetor" data-id="${s.id}" style="margin-right:auto">Remover setor</button>`:'',body:`
-   <div class="f"><label for="nome">Nome</label><input name="nome" id="nome" value="${e(s?.nome)}" required></div>
-   <label class="opt"><input type="checkbox" name="ativo" ${!s||s.ativo?'checked':''}><span>Setor ativo<br><span class="hint">Aparece no encaminhamento e no cadastro de usuários</span></span></label><div style="height:10px"></div>`}))},
+   <div class="f" data-req="RF10" data-db="setor.nome"><label for="nome">Nome</label><input name="nome" id="nome" value="${e(s?.nome)}" required></div>
+   <label class="opt" data-req="RF10" data-db="setor.ativo"><input type="checkbox" name="ativo" ${!s||s.ativo?'checked':''}><span>Setor ativo<br><span class="hint">Aparece no encaminhamento e no cadastro de usuários</span></span></label><div style="height:10px"></div>`}))},
  rmsetor(d){const f=$('#dlg1 form');if(S.users.some(u=>u.setorId===d.id))return ferr(f,'Há pessoas vinculadas a este setor. Mova-as antes de remover, ou apenas desative o setor.');
   if(S.evidencias.some(x=>x.setorAtualId===d.id||x.setorPendenteId===d.id)||Object.values(S.cadeia).some(c=>c.some(r=>r.setorId===d.id)))return ferr(f,'Este setor aparece em cadeias de custódia. Ele pode ser desativado, mas não removido.');
   S.setores=S.setores.filter(s=>s.id!==d.id);closeM();render();toast('Setor removido.')},
  lacre(d){modal(form('lacre',{id:d.id,t:'Associar lacre',sub:'Associe o lacre que já está afixado no invólucro. O sistema não gera lacre novo neste momento.',ok:'Associar lacre',body:campoLacre}));fillDisp()},
  romper(d){const l=lacreAtivo(evById(d.id));modal(form('romper',{id:d.id,t:`Registrar rompimento do lacre ${e(l.numero)}`,ok:'Registrar rompimento',body:`<p class="warn">Depois do rompimento, a evidência fica bloqueada até um novo lacre ser associado.</p>
-   <div class="f"><label for="rresp">Responsável</label><input id="rresp" value="${e(me().nome)}" disabled></div>
-   <div class="f" data-req="RF07"><label for="motivo">Motivo do rompimento</label><textarea name="motivo" id="motivo" required></textarea></div>`}))},
+   <div class="f" data-req="RF07" data-db="lacre.rompido_por_id"><label for="rresp">Responsável</label><input id="rresp" value="${e(me().nome)}" disabled></div>
+   <div class="f" data-req="RF07" data-db="lacre.motivo_rompimento"><label for="motivo">Motivo do rompimento</label><textarea name="motivo" id="motivo" required></textarea></div>`}))},
  ref(d){modal(form('ref',{id:d.id,t:'Referência de lacre externo',sub:'Para lacres de outras instituições que já estão na evidência. Fica como registro histórico, ligado ao lacre do Instituto.',ok:'Adicionar referência',body:`
-   <div class="two"><div class="f"><label for="remissor">Emissor</label><select name="emissor" id="remissor">${Object.entries(EMISSOR).filter(([k])=>k!=='instituto').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
-   <div class="f"><label for="rnum">Número</label><input name="numero" id="rnum" required></div></div>
-   <div class="f"><label for="robs">Observação</label><input name="obs" id="robs"></div>`}))},
+   <div class="two"><div class="f" data-req="RF04e" data-db="lacre_referencia_externa.emissor"><label for="remissor">Emissor</label><select name="emissor" id="remissor">${Object.entries(EMISSOR).filter(([k])=>k!=='instituto').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+   <div class="f" data-req="RF04e" data-db="lacre_referencia_externa.numero_lacre_externo"><label for="rnum">Número</label><input name="numero" id="rnum" required></div></div>
+   <div class="f" data-req="RF04e" data-db="lacre_referencia_externa.observacao"><label for="robs">Observação</label><input name="obs" id="robs"></div>`}))},
  encaminhar(d){modal(form('encaminhar',{id:d.id,t:'Encaminhar evidência',sub:'A evidência fica em trânsito, sem responsável individual, até alguém do destino confirmar o recebimento.',ok:'Encaminhar',body:`
-   <fieldset class="f" data-req="RF08b RF13b"><legend>Destino</legend><div class="opts"><label class="opt"><input type="radio" name="tipo" value="interno" checked><span>Setor do Instituto</span></label><label class="opt"><input type="radio" name="tipo" value="externo"><span>Destino externo</span></label></div></fieldset>
-   <div class="f" data-int><label for="setorId">Setor de destino</label>${selSetor('setorId')}</div>
-   <div class="two" data-ext hidden><div class="f"><label for="xnome">Nome do destino</label><input name="nome" id="xnome" placeholder="Ex.: 1º DIP"></div><div class="f"><label for="xend">Endereço</label><input name="endereco" id="xend"></div></div>
-   <div class="f" data-req="RF13"><label for="transp">Quem transporta</label><input name="transportador" id="transp" value="${e(me().nome)}" required></div>
-   <div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea></div>`}))},
- armazenar(d){modal(form('armazenar',{id:d.id,t:'Armazenar evidência',ok:'Armazenar',body:`<div class="f"><label for="setorId">Setor de armazenamento</label>${selSetor('setorId',S.setores.find(s=>/dep/i.test(s.nome))?.id)}</div>
-   <div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs" placeholder="Ex.: prateleira, armário"></textarea></div>`}))},
+   <fieldset class="f" data-req="RF08b RF13b" data-db="cadeia_custodia.setor_destino_id cadeia_custodia.destino_externo_nome"><legend>Destino</legend><div class="opts"><label class="opt"><input type="radio" name="tipo" value="interno" checked><span>Setor do Instituto</span></label><label class="opt"><input type="radio" name="tipo" value="externo"><span>Destino externo</span></label></div></fieldset>
+   <div class="f" data-int data-req="RF08b RF12" data-db="cadeia_custodia.setor_destino_id evidencia.setor_destino_pendente_id"><label for="setorId">Setor de destino</label>${selSetor('setorId')}</div>
+   <div class="two" data-ext hidden data-req="RF13b" data-db="cadeia_custodia.destino_externo_nome cadeia_custodia.destino_externo_endereco evidencia.destino_externo_nome evidencia.destino_externo_endereco"><div class="f"><label for="xnome">Nome do destino</label><input name="nome" id="xnome" placeholder="Ex.: 1º DIP"></div><div class="f"><label for="xend">Endereço</label><input name="endereco" id="xend"></div></div>
+   <div class="f" data-req="RF13" data-db="cadeia_custodia.nome_responsavel_posse"><label for="transp">Quem transporta</label><input name="transportador" id="transp" value="${e(me().nome)}" required></div>
+   <div class="f" data-req="RF08" data-db="cadeia_custodia.observacao"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea></div>`}))},
+ armazenar(d){modal(form('armazenar',{id:d.id,t:'Armazenar evidência',ok:'Armazenar',body:`<div class="f" data-req="RF08b" data-db="cadeia_custodia.setor_destino_id evidencia.setor_atual_id"><label for="setorId">Setor de armazenamento</label>${selSetor('setorId',S.setores.find(s=>/dep/i.test(s.nome))?.id)}</div>
+   <div class="f" data-req="RF08" data-db="cadeia_custodia.observacao"><label for="obs">Observação</label><textarea name="obs" id="obs" placeholder="Ex.: prateleira, armário"></textarea></div>`}))},
  devolver(d){modal(form('devolver',{id:d.id,t:'Registrar devolução',ok:'Registrar devolução',body:`<p class="warn">A devolução encerra a posse do Instituto. Depois dela não há novas movimentações.</p>
-   <div class="f" data-req="RF13e"><label for="para">Devolvida a quem, e onde</label><input name="para" id="para" required placeholder="Ex.: 1º DIP, Av. Brasil, 300"></div>
-   <div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea></div>`}))},
+   <div class="f" data-req="RF13e" data-db="cadeia_custodia.destino_externo_nome cadeia_custodia.endereco_local"><label for="para">Devolvida a quem, e onde</label><input name="para" id="para" required placeholder="Ex.: 1º DIP, Av. Brasil, 300"></div>
+   <div class="f" data-req="RF08" data-db="cadeia_custodia.observacao"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea></div>`}))},
  receber:d=>simples(d.id,'receber',evById(d.id).destinoExterno?'Confirmar chegada ao destino externo':'Confirmar recebimento',evById(d.id).destinoExterno?'A chegada a um destino externo não inicia o ciclo de análise.':`Você passa a constar como quem recebeu a evidência no setor ${sn(me().setorId)}. Receber não significa que você fará a análise.`),
  assumir:d=>simples(d.id,'assumir','Assumir análise','A evidência passa a "Em análise" em seu nome. Só você poderá concluir.'),
  concluir:d=>simples(d.id,'concluir','Concluir análise','A evidência passa a "Analisado".'),
  async verificar(){const ev=evById(ui.sel),c=S.cadeia[ev.id],itens={};
   for(let i=0;i<c.length;i++){const r=c[i],calc=await hashRec(r),elo=r.hashAnterior===(i?c[i-1].hashRegistro:ZERO);itens[r.seq]={ok:calc===r.hashRegistro&&elo,elo,calc}}
-  S.verif[ev.id]={em:new Date().toISOString(),itens};render();
+  S.verif[ev.id]={em:new Date().toISOString(),itens,por:me().nome,total:c.length,div:Object.values(itens).filter(x=>!x.ok).length,ultimo:c.length?c[c.length-1].hashRegistro:''};render();
   const bad=Object.values(itens).filter(x=>!x.ok).length;toast(bad?'Divergência encontrada na cadeia.':'Cadeia íntegra.')},
  adulterar(){const ev=evById(ui.sel),c=S.cadeia[ev.id];modal(form('adulterar',{t:'Simular adulteração',sub:'Imita alguém alterando um registro direto no banco, por fora do sistema. O hash guardado não muda, e a próxima verificação deve apontar o registro.',ok:'Alterar registro',body:`
-   <div class="f"><label for="seq">Registro a alterar</label><select name="seq" id="seq">${c.map(r=>`<option value="${r.seq}">${r.seq}. ${e(r.acao)}, ${e(r.responsavel)}</option>`).join('')}</select></div>
-   <div class="f"><label for="resp">Trocar o responsável para</label><input name="resp" id="resp" value="Outra Pessoa" required></div>`}))},
+   <div class="f" data-req="RF22" data-db="cadeia_custodia.numero_sequencia"><label for="seq">Registro a alterar</label><select name="seq" id="seq">${c.map(r=>`<option value="${r.seq}">${r.seq}. ${e(r.acao)}, ${e(r.responsavel)}</option>`).join('')}</select></div>
+   <div class="f" data-req="RNF03" data-db="cadeia_custodia.nome_responsavel_posse"><label for="resp">Trocar o responsável para</label><input name="resp" id="resp" value="Outra Pessoa" required></div>`}))},
  relatorio(){const ev=evById(ui.sel),c=S.cadeia[ev.id],v=S.verif[ev.id];
   const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
-  const csv=['seq;acao;responsavel;setor;destino;local;data_hora;observacao;localizacao;hash_anterior;hash_registro;verificacao'].concat(c.map(r=>[r.seq,q(r.acao),q(r.responsavel),q(r.setorId?sn(r.setorId):''),q(r.destino),q(r.local),r.dataHora,q(r.observacao),q(r.geo),r.hashAnterior,r.hashRegistro,v&&v.itens[r.seq]?(v.itens[r.seq].ok?'confere':'DIVERGENTE'):'nao verificado'].join(';'))).join('\n');
+  const csv=['numero_sequencia;acao;registrado_por;nome_responsavel_posse;setor_atual;destino;endereco_local;data_hora_registro;observacao;gps_obtido;hash_registro_anterior;hash_registro;resultado_verificacao'].concat(c.map(r=>[r.seq,q(r.acao),q(r.registradoPor||r.responsavel),q(r.responsavel),q(r.setorId?sn(r.setorId):''),q(r.destino),q(r.local),r.dataHora,q(r.observacao),'false',r.hashAnterior,r.hashRegistro,v&&v.itens[r.seq]?(v.itens[r.seq].ok?'confere':'DIVERGENTE'):'nao verificado'].join(';'))).join('\n');
   const bad=v?Object.values(v.itens).filter(x=>!x.ok).length:0;
   modal(`<div class="dwrap">${head('Relatório de custódia',e(ev.codigo)+', '+e(ev.descricao),1)}<div class="db">
    <dl class="kv" style="margin:0 0 16px;padding:0;border:0;grid-template-columns:1fr 1fr"><div><dt>Situação</dt><dd>${STATUS[ev.status][0]}${bloqueada(ev)?', sem lacre ativo':''}</dd></div>
    <div><dt>Integridade</dt><dd>${v?(bad?`${bad} registro(s) divergente(s)`:'Cadeia íntegra')+', '+fmt(v.em):'Ainda não verificada'}</dd></div></dl>
    ${v?'':'<p class="warn">Feche e use "Verificar integridade" para incluir o resultado no relatório.</p>'}
    <div class="tw" style="border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>Nº</th><th>Ação</th><th>Responsável</th><th>Data</th><th>Hash</th></tr></thead><tbody>${c.map(r=>`<tr><td>${r.seq}</td><td>${e(r.acao)}</td><td>${e(r.responsavel)}</td><td class="small">${fmt(r.dataHora)}</td><td class="mono">${short(r.hashRegistro)}</td></tr>`).join('')}</tbody></table></div>
-   <div class="f" style="margin:16px 0 0"><label for="csv">CSV completo</label><textarea id="csv" readonly rows="4" class="mono">${e(csv)}</textarea><p class="hint">Download e PDF estão desligados nesta prévia. Copie o CSV e cole em uma planilha.</p></div></div>
+   <div class="f" style="margin:16px 0 0"><label for="csv">CSV completo (colunas com os nomes do banco)</label><textarea id="csv" readonly rows="4" class="mono">${e(csv)}</textarea><p class="hint">Download e PDF estão desligados nesta prévia. Copie o CSV e cole em uma planilha.</p></div></div>
    <div class="df"><button class="btn" data-a="close">Fechar</button><button class="btn pri" data-a="copiar" data-req="RF23">Copiar CSV</button></div></div>`)},
  async copiar(){const t=$('#csv');try{await navigator.clipboard.writeText(t.value);toast('CSV copiado.')}catch(_){t.select();toast('Não foi possível copiar sozinho. O texto está selecionado: use Ctrl+C.')}},
  async semOc(){closeM(2);await salvarNova(true)},
  naoTransp(){closeM();render()}
 };
-function simples(id,f,titulo,texto){modal(form(f,{id,t:titulo,sub:texto,ok:titulo,body:`<div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea><p class="hint">${GEO}; o registro guarda essa informação.</p></div>`}))}
+function simples(id,f,titulo,texto){modal(form(f,{id,t:titulo,sub:texto,ok:titulo,body:`<div class="f" data-req="RF08" data-db="cadeia_custodia.observacao"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea><p class="hint">${GEO}; o registro guarda essa informação.</p></div>`}))}
 
 async function salvarNova(confirmado){
   const f=$('#dlg1 form'),d=Object.fromEntries(new FormData(f)),u=me();
@@ -3153,14 +3193,17 @@ async function salvarNova(confirmado){
   }
   const temOc=draftOc&&Object.values(draftOc).some(v=>String(v||'').trim());
   if(!temOc&&!confirmado)return modal(`<div class="dwrap">${head('Registrar sem ocorrência?','',2)}<div class="db"><p>Nenhum dado de ocorrência foi informado. Você pode voltar e vincular agora, ou continuar assim mesmo.</p></div><div class="df"><button class="btn" data-a="close" data-n="2">Voltar ao formulário</button><button class="btn pri" data-a="semOc" data-req="RF02e">Registrar sem ocorrência</button></div></div>`,2);
-  const file=f.foto.files[0];let hashFoto='',fotoNome='';
-  if(file){hashFoto=hex(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()));fotoNome=file.name}
-  const ev=await novaEvidencia(u,{codigo:d.codigo.trim(),tipo:d.tipo,descricao:d.descricao.trim(),endereco:d.endereco.trim(),ocorrenciaId:vincularOcorrencia(draftOc,u),hashFoto,fotoNome,fora:d.fora==='sim',justificativa:(d.justificativa||'').trim()});
+  const file=f.foto.files[0];let hashFoto='',fotoNome='',fotoTipo='',fotoTamanho=0;
+  if(file){hashFoto=hex(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()));fotoNome=file.name;fotoTipo=file.type||'desconhecido';fotoTamanho=file.size}
+  const lat=(d.lat||'').trim().replace(',','.'),lng=(d.lng||'').trim().replace(',','.');
+  if((lat&&!lng)||(!lat&&lng))return ferr(f,'Informe latitude e longitude juntas, ou deixe as duas em branco.');
+  if(lat&&(isNaN(+lat)||Math.abs(+lat)>90||isNaN(+lng)||Math.abs(+lng)>180))return ferr(f,'Latitude vai de -90 a 90 e longitude de -180 a 180.');
+  const ev=await novaEvidencia(u,{codigo:d.codigo.trim(),tipo:d.tipo,descricao:d.descricao.trim(),endereco:d.endereco.trim(),lat,lng,ocorrenciaId:vincularOcorrencia(draftOc,u),hashFoto,fotoNome,fotoTipo,fotoTamanho,fora:d.fora==='sim',justificativa:(d.justificativa||'').trim()});
   if(num)await opAssociar(ev,u,{externo:ext,emissor:d.emissor,numero:num});
   ui.sel=ev.id;save();
   modal(form('transp',{id:ev.id,t:`Evidência ${e(ev.codigo)} registrada`,sub:'Ela está sendo transportada agora?',ok:'Sim, registrar encaminhamento',cancel:'Não, ela fica comigo',cancelA:'naoTransp',body:`
-   <div class="f" data-req="RF12b"><label for="transp">Quem transporta</label><input name="transportador" id="transp" value="${e(u.nome)}" required></div>
-   <div class="f"><label for="setorId">Para qual setor</label>${selSetor('setorId',S.setores.find(s=>/recep/i.test(s.nome))?.id)}</div>`}));
+   <div class="f" data-req="RF12b" data-db="cadeia_custodia.nome_responsavel_posse"><label for="transp">Quem transporta</label><input name="transportador" id="transp" value="${e(u.nome)}" required></div>
+   <div class="f" data-req="RF12 RF12b" data-db="cadeia_custodia.setor_destino_id evidencia.setor_destino_pendente_id"><label for="setorId">Para qual setor</label>${selSetor('setorId',S.setores.find(s=>/recep/i.test(s.nome))?.id)}</div>`}));
 }
 
 const F={
@@ -3191,20 +3234,22 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.matches(
 document.addEventListener('submit',async ev=>{ev.preventDefault();const f=ev.target,fn=F[f.dataset.f];if(!fn)return;const btn=f.querySelector('.btn.pri');if(btn)btn.disabled=true;
   try{await fn(Object.fromEntries(new FormData(f)),f)}catch(x){const p=f.querySelector('.err');if(p)ferr(f,'Não foi possível concluir: '+x.message)}finally{if(btn&&btn.isConnected)btn.disabled=false}});
 document.addEventListener('input',ev=>{const t=ev.target;if(!t.dataset.q)return;ui[t.dataset.q]=t.value;
-  if(t.dataset.q==='q')$('#evrows').innerHTML=evRows();else $('#reqlist').innerHTML=reqList()});
+  if(t.dataset.q==='q')$('#evrows').innerHTML=evRows();else if(t.dataset.q==='dq'){const v=views.banco(),m=v.match(/<div id="dblist">([\s\S]*)<\/div>$/);$('#dblist').innerHTML=m?m[1]:''}else $('#reqlist').innerHTML=reqList()});
 document.addEventListener('change',ev=>{const t=ev.target,f=t.form;
   if(t.id==='user'){S.me=t.value;render();toast(`Agora você é ${me().nome}, ${PERFIL[me().papel]}, ${sn(me().setorId)}.`)}
   if(t.dataset.c){ui[t.dataset.c]=t.value;render()}
   if(t.name==='origem'){const x=t.value==='externo';f.querySelector('[data-ext]').hidden=!x;f.querySelector('[data-inst]').hidden=x;f.numero.setAttribute('list',x?'':'disp')}
   if(t.name==='fora')f.querySelector('[data-just]').hidden=t.value!=='sim';
+  if(t.id==='foto'){const fl=t.files[0],p=$('#fotoinfo');if(p&&fl)p.innerHTML=`<span class="mono">${e(fl.name)}</span> · tipo <span class="mono">${e(fl.type||'desconhecido')}</span> · ${tam(fl.size)}. O SHA-256 é calculado ao salvar.`}
   if(t.name==='tipo'&&f&&f.dataset.f==='encaminhar'){const x=t.value==='externo';f.querySelector('[data-ext]').hidden=!x;f.querySelector('[data-int]').hidden=x}
 });
 /* caixa de requisito: aparece ao passar o mouse ou focar, some ao sair */
 const tip=document.createElement('div');tip.id='tip';tip.setAttribute('role','tooltip');
 let tipEl=null,tipT=null;
 function tipShow(el){
-  const ids=(el.dataset.req||'').split(/\s+/).filter(Boolean);if(!ids.length)return;
-  tip.innerHTML=ids.map(k=>`<div><b>${e(k.split('-')[0])}</b><span>${e(SHORT[k]||'')}</span></div>`).join('');
+  const ids=(el.dataset.req||'').split(/\s+/).filter(Boolean),dbs=(el.dataset.db||'').split(/\s+/).filter(Boolean);if(!ids.length&&!dbs.length)return;
+  const dbl=dbs.map(k=>{const[t,c]=k.split('.');if(!DBD[t])return '';if(!c)return `<div class="dbl"><code>tabela ${e(t)}</code><span>${e(curto(DBD[t]._[0]))}</span></div>`;const v=DBD[t][c];return v?`<div class="dbl"><code>${e(t)}.${e(c)}</code><span>${e(curto(v[2]))}</span></div>`:''}).join('');
+  tip.innerHTML=ids.map(k=>`<div><b>${e(k.split('-')[0])}</b><span>${e(SHORT[k]||'')}</span></div>`).join('')+(dbl?`<div class="${ids.length?'tdb':'tdb0'}"><div class="tl1">No banco de dados</div>${dbl}</div>`:'');
   (el.closest('dialog')||document.body).append(tip);
   const r=el.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
   let y=r.top-h-8;if(y<8)y=r.bottom+8;
@@ -3212,20 +3257,22 @@ function tipShow(el){
   tip.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;tip.classList.add('on');
 }
 function tipHide(){clearTimeout(tipT);tipEl=null;tip.classList.remove('on')}
-document.addEventListener('mouseover',ev=>{const el=ev.target.closest&&ev.target.closest('[data-req]');if(el===tipEl)return;tipHide();if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}});
+document.addEventListener('mouseover',ev=>{const el=ev.target.closest&&ev.target.closest('[data-req],[data-db]');if(el===tipEl)return;tipHide();if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}});
 document.addEventListener('mouseout',ev=>{if(!ev.relatedTarget)tipHide()});
-document.addEventListener('focusin',ev=>{const el=ev.target.closest('[data-req]');tipHide();if(el&&ev.target.matches(':focus-visible')){tipEl=el;tipShow(el)}});
+document.addEventListener('mousemove',ev=>{if(tipEl)return;const el=ev.target.closest&&ev.target.closest('[data-req],[data-db]');if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}},{passive:true});
+document.addEventListener('focusin',ev=>{const el=ev.target.closest('[data-req],[data-db]');tipHide();if(el&&ev.target.matches(':focus-visible')){tipEl=el;tipShow(el)}});
 document.addEventListener('focusout',tipHide);
 document.addEventListener('click',tipHide,true);
 document.addEventListener('scroll',tipHide,true);
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape')tipHide()});
 window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
 
-const NAV=[['evidencias','Evidências','box','RF02 RF20'],['lacres','Lacres','tag','RF04 RF06b'],['setores','Setores e usuários','users','RF10 RF11 RF16'],['requisitos','Requisitos','list','']];
+const NAV=[['evidencias','Evidências','box','RF02 RF20'],['lacres','Lacres','tag','RF04 RF06b'],['setores','Setores e usuários','users','RF10 RF11 RF16'],['requisitos','Requisitos','list',''],['banco','Banco de dados','database','']];
 function chrome(v){
   const bl=S.evidencias.filter(bloqueada).length,u=me();
   const cnt={evidencias:bl?`<em class="hot">${bl}</em>`:`<em>${S.evidencias.length}</em>`,lacres:`<em>${S.lacres.filter(l=>l.status==='disponivel').length}</em>`};
-  $('#nav').innerHTML=NAV.map(n=>`<a href="#${n[0]}"${rq(n[3])} ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1]}${cnt[n[0]]||''}</a>`).join('');
+  const NDB={evidencias:'evidencia cadeia_custodia ocorrencia',lacres:'lacre lote_lacre lacre_referencia_externa',setores:'setor usuario',banco:''};
+  $('#nav').innerHTML=NAV.map(n=>`<a href="#${n[0]}"${rq(n[3],NDB[n[0]])} ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1]}${cnt[n[0]]||''}</a>`).join('');
   $('#tabbar').innerHTML=NAV.map(n=>`<a href="#${n[0]}" ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1].split(' ')[0]}</a>`).join('');
   $('#me').innerHTML=`${av(u)}<div><b>${e(u.nome)}</b><span>${PERFIL[u.papel]}, ${e(sn(u.setorId))}</span></div>`;
   $('#user').innerHTML=S.users.map(x=>`<option value="${x.id}" ${x.id===S.me?'selected':''}>${e(x.nome)} (${PERFIL[x.papel]}, ${e(sn(x.setorId))})</option>`).join('');
@@ -3239,8 +3286,8 @@ function render(){
 (async()=>{
   if(!window.crypto||!crypto.subtle){$('#main').innerHTML='<p class="err">Este navegador não oferece SHA-256 (Web Crypto). Abra a página em um navegador atual, por HTTPS.</p>';return}
   try{S=JSON.parse(localStorage.getItem(KEY))}catch(_){S=null}
-  if(!S||!S.evidencias||S.evidencias.length<4&&!S.v2){await seed()}
-  S.v2=1;render();
+  if(!S||S.ver!==3){await seed()}
+  render();
 })();
 </script>
 </body>
