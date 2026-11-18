@@ -6,8 +6,7 @@
 <title>Cadeia de Custódia de Evidências: protótipo do MVP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script>/* qrcode-generator 1.4.4, MIT, Kazuhiko Arase */
-//---------------------------------------------------------------------
+<script>//---------------------------------------------------------------------
 //
 // QR Code Generator for JavaScript
 //
@@ -2304,7 +2303,6 @@ var qrcode = function() {
 }(function () {
     return qrcode;
 }));
-
 </script>
 <style>
 :root{
@@ -2505,6 +2503,17 @@ details summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--pri)
 .people b{display:block;font-weight:600;color:var(--ink);line-height:1.2}
 .people small{color:var(--muted)}
 .people .pill{margin-left:auto}
+.people li{align-items:flex-start}
+.people li>.av{margin-top:2px}
+.people li>div:first-of-type{flex:1;min-width:0}
+.people small{display:block}
+.people small.em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tok{white-space:nowrap;display:inline-flex;align-items:center;gap:5px;margin-top:5px;font:500 .74rem/1 var(--mono);color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:4px 7px;cursor:pointer}
+.tok svg{width:12px;height:12px}
+.tok:hover{border-color:var(--muted)}
+.tok.off{cursor:default;color:var(--muted);font-family:inherit}
+.tokv{width:100%;font:500 .78rem/1.45 var(--mono);word-break:break-all;resize:none;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--ink)}
+.tokv .h{color:#c2410c}.tokv .p{color:#6d28d9}.tokv .s{color:#0f766e}
 
 /* requisitos */
 .issues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
@@ -2671,7 +2680,7 @@ const P={
  building:'<path d="M4 21V5l8-2v18M12 9l8 2v10M3 21h18"/><path d="M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2"/>'
 };
 const SHORT={
- RF01:'Login com JWT (simulado aqui)',RF02:'Cadastro de evidência',RF02b:'Local do cadastro e justificativa','RF02b-oc':'Vincular ocorrência (pop-up)',
+ RF01:'Login e token JWT por pessoa',RF02:'Cadastro de evidência',RF02b:'Local do cadastro e justificativa','RF02b-oc':'Vincular ocorrência (pop-up)',
  RF02c:'GIGANTE existente: junta à ocorrência',RF02d:'GIGANTE novo: cria a ocorrência',RF02e:'Sem ocorrência: pede confirmação',
  RF03:'SHA-256 da foto no upload',RF04:'Gerar lote de lacres com QR',RF04b:'Lacre nasce disponível',RF04c:'QR contém só o número',
  RF04e:'Referência a lacre externo',RF05:'Associar lacre já afixado',RF05b:'Vincula e guarda o hash',RF05c:'Recusa lacre usado ou rompido',
@@ -2684,7 +2693,7 @@ const SHORT={
  RF15b:'Receber não é analisar',RF16:'Perfis: perito, normal, admin',RF17:'Só perito do setor assume',RF17b:'Quem não é perito é recusado',
  RF18:'Assumir grava "Em análise"',RF19:'Só quem assumiu conclui',RF19b:'Concluir exige lacre ativo',RF20:'Cadeia em ordem, com hashes',
  RF21:'Recalcular e comparar hashes',RF22:'Apontar registro divergente',RF23:'Exportar com a verificação',
- RNF03:'Registros não podem ser alterados',RNF05:'Número do lacre gerado pelo sistema'};
+ RNF02:'API autenticada por token JWT','RNF-S4':'Senha só como hash; token expira',RNF03:'Registros não podem ser alterados',RNF05:'Número do lacre gerado pelo sistema'};
 const rq=(ids,db)=>(ids?` data-req="${ids}"`:'')+(db?` data-db="${db}"`:'');
 const DBD={"setor": {"_": ["Setores do Instituto. Setor em uso não é apagado, só desativado.", "RF10, RF11"], "id": ["uuid", "RF10", "Identificador do setor"], "nome": ["text", "RF10", "Nome do setor, de 2 a 120 caracteres; único sem diferenciar maiúsculas"], "ativo": ["boolean", "RF10", "Setor inativo não aparece no encaminhamento nem no cadastro de usuários"], "criado_em": ["timestamptz", "RF10", "Data e hora do cadastro do setor"], "atualizado_em": ["timestamptz", "RF10", "Data e hora da última alteração, atualizada por gatilho"]}, "usuario": {"_": ["Pessoas com acesso ao sistema. Quem aparece em alguma cadeia não é apagado, só desativado.", "RF01, RF11, RF16"], "id": ["uuid", "RF01", "Identificador do usuário"], "nome": ["text", "RF01", "Nome completo, de 2 a 160 caracteres"], "matricula": ["text", "RF01", "Matrícula funcional; única"], "email": ["text", "RF01", "E-mail de acesso; único sem diferenciar maiúsculas"], "senha_hash": ["text", "RF01, RNF-S4", "Hash bcrypt ou Argon2id da senha; senha em texto puro é recusada"], "perfil": ["perfil_usuario", "RF16", "Perfil de acesso: perito, normal ou administrador"], "setor_id": ["uuid", "RF11", "Setor ao qual o usuário pertence"], "ativo": ["boolean", "RF01", "Usuário inativo não faz login"], "ultimo_login_em": ["timestamptz", "RF01", "Data e hora do último login"], "criado_em": ["timestamptz", "RF01", "Data e hora do cadastro"], "atualizado_em": ["timestamptz", "RF01", "Data e hora da última alteração"]}, "token_revogado": {"_": ["Tokens JWT invalidados no logout; a API recusa qualquer token listado aqui.", "RF01, RNF02"], "id_token": ["uuid", "RF01, RNF02", "Identificador único do token JWT (campo jti do token)"], "usuario_id": ["uuid", "RF01", "Usuário dono do token"], "expira_em": ["timestamptz", "RNF02", "Quando o token expira; depois disso a linha pode ser apagada"], "revogado_em": ["timestamptz", "RF01", "Quando o logout aconteceu"]}, "ocorrencia": {"_": ["Dados do pop-up \"Vincular Ocorrência\". Todos os campos são opcionais, mas a linha só existe com ao menos um preenchido.", "RF02b, RF02c, RF02d, RF02e"], "id": ["uuid", "RF02b", "Identificador da ocorrência"], "codigo_gigante": ["text", "RF02c, RF02d", "Código GIGANTE/SSP; único quando preenchido, usado para juntar evidências na mesma ocorrência"], "numero_oficio": ["text", "RF02b", "Número do ofício"], "delegacia_origem": ["text", "RF02b", "Delegacia que originou a ocorrência"], "tipo_crime": ["tipo_crime", "RF02b", "Tipo de crime (lista fixa)"], "data_hora_ocorrencia": ["timestamptz", "RF02b", "Quando o fato aconteceu"], "endereco_ocorrencia": ["text", "RF02b", "Endereço do fato"], "observacoes": ["text", "RF02b", "Observações livres"], "criada_por_id": ["uuid", "RF02b", "Usuário que cadastrou a ocorrência"], "criada_em": ["timestamptz", "RF02b", "Data e hora do cadastro"], "atualizado_em": ["timestamptz", "RF02c", "Data e hora da última alteração (RF02c acrescenta dados)"]}, "ocorrencia_bo": {"_": ["Boletins de ocorrência (B.O.) de cada ocorrência; uma ocorrência pode ter vários.", "RF02b, RF02c"], "ocorrencia_id": ["uuid", "RF02b", "Ocorrência à qual o B.O. pertence"], "numero_bo": ["text", "RF02b, RF02c", "Número do boletim de ocorrência; não se repete na mesma ocorrência"], "adicionado_por_id": ["uuid", "RF02c", "Usuário que incluiu o B.O."], "adicionado_em": ["timestamptz", "RF02c", "Data e hora da inclusão"]}, "evidencia": {"_": ["O objeto rastreado. As colunas de situação são uma cópia de leitura rápida; a cadeia de custódia é a fonte da verdade.", "RF02, RF03, RF12, RF13, RF17 a RF19"], "id": ["uuid", "RF02", "Identificador da evidência"], "codigo": ["text", "RF02", "Código da evidência, ex.: EV-2026-0001; não muda depois do cadastro"], "tipo_evidencia": ["tipo_evidencia", "RF02", "Tipo da evidência (lista fixa)"], "descricao": ["text", "RF02", "Descrição do objeto"], "endereco_coleta": ["text", "RF02", "Endereço onde a evidência foi encontrada"], "latitude_coleta": ["numeric(9,6)", "RF02", "Latitude do local onde foi encontrada"], "longitude_coleta": ["numeric(9,6)", "RF02", "Longitude do local onde foi encontrada"], "ocorrencia_id": ["uuid", "RF02b, RF02e", "Ocorrência vinculada; opcional"], "foto_caminho_arquivo": ["text", "RF02", "Onde o arquivo da foto foi guardado (disco ou bucket)"], "foto_nome_arquivo": ["text", "RF02", "Nome original do arquivo enviado"], "foto_tipo_arquivo": ["text", "RF02", "Formato da foto: image/jpeg, image/png, image/heic ou image/webp"], "foto_tamanho_bytes": ["bigint", "RF02", "Tamanho do arquivo da foto, em bytes"], "foto_hash_sha256": ["char(64)", "RF03, RNF04", "SHA-256 do arquivo da foto, calculado no backend no upload"], "coletado_por_id": ["uuid", "RF02, RF08c", "Usuário que registrou a coleta"], "coletado_em": ["timestamptz", "RF02, RF08c", "Data e hora da coleta"], "situacao": ["situacao_evidencia", "RF12c, RF13, RF18, RF19, RF13e", "Situação atual: coletada, em trânsito, recebida, em análise, analisada, armazenada, em destino externo ou devolvida"], "setor_atual_id": ["uuid", "RF14", "Setor onde a evidência está; vazio em trânsito e após a devolução"], "setor_destino_pendente_id": ["uuid", "RF12, RF13, RF14", "Setor para onde foi encaminhada, enquanto está em trânsito"], "destino_externo_nome": ["text", "RF13b", "Nome do destino fora do Instituto"], "destino_externo_endereco": ["text", "RF13b", "Endereço do destino fora do Instituto"], "perito_responsavel_id": ["uuid", "RF17, RF18, RF19", "Perito que assumiu a análise; só ele conclui"], "criado_em": ["timestamptz", "RF02", "Data e hora da criação da linha"], "atualizado_em": ["timestamptz", "RF12 a RF19", "Data e hora da última mudança de situação"]}, "lote_lacre": {"_": ["Lotes de lacres do Instituto, gerados antes de ir a campo. Só aceita inserção.", "RF04, RF06"], "id": ["uuid", "RF04", "Identificador do lote"], "codigo_lote": ["text", "RF04", "Código do lote, ex.: L-2026-0001, gerado pelo banco"], "quantidade": ["integer", "RF04", "Quantidade de lacres no lote, de 1 a 500"], "primeiro_numero_lacre": ["text", "RF04, RF06", "Primeiro número de lacre do lote"], "ultimo_numero_lacre": ["text", "RF04, RF06", "Último número de lacre do lote"], "gerado_por_id": ["uuid", "RF04, RF16", "Administrador que gerou o lote"], "gerado_em": ["timestamptz", "RF04", "Data e hora da geração"]}, "lacre": {"_": ["Cada lacre físico: do Instituto (com lote e QR code) ou externo usado como lacre principal (sem lote).", "RF04 a RF07c, RNF05"], "id": ["uuid", "RF04", "Identificador do lacre"], "numero_lacre": ["text", "RF04c, RF05e, RNF05", "Número impresso no lacre e único conteúdo do QR code; único no sistema, externos inclusive"], "emissor": ["emissor_lacre", "RF04d, RF05d, RF06b", "Quem emitiu o lacre: instituto (só com lote), SSP, SENASP/MJ, tribunal, Polícia Federal, fabricante ou outro"], "lote_id": ["uuid", "RF04, RF04d", "Lote de origem; vazio para lacre externo"], "situacao": ["situacao_lacre", "RF04b, RF05b, RF07", "Disponível, vinculado ou rompido; rompido é final"], "evidencia_id": ["uuid", "RF05b, RF05c", "Evidência lacrada; vazio enquanto disponível; no máximo um lacre vinculado por evidência"], "hash_foto_na_associacao": ["char(64)", "RF05b", "SHA-256 da foto da evidência no momento em que o lacre foi associado"], "cadastrado_por_id": ["uuid", "RF05d", "Quem cadastrou um lacre externo (obrigatório para externos)"], "cadastrado_em": ["timestamptz", "RF04, RF05d", "Data e hora em que o lacre entrou no sistema"], "vinculado_por_id": ["uuid", "RF05, RF05b", "Quem associou o lacre à evidência"], "vinculado_em": ["timestamptz", "RF05b", "Data e hora da associação"], "rompido_por_id": ["uuid", "RF07, RF07c", "Quem registrou o rompimento; define quem pode substituir o lacre antes de a evidência chegar a um setor"], "motivo_rompimento": ["text", "RF07", "Motivo do rompimento; obrigatório"], "rompido_em": ["timestamptz", "RF07", "Data e hora do rompimento"]}, "lacre_referencia_externa": {"_": ["Lacres de outras instituições que já estavam na evidência, ligados ao lacre do Instituto como histórico. Só aceita inserção.", "RF04e"], "id": ["uuid", "RF04e", "Identificador da referência"], "lacre_id": ["uuid", "RF04e", "Lacre do Instituto ao qual a referência se liga"], "emissor": ["emissor_lacre", "RF04e", "Emissor do lacre externo (qualquer um, menos instituto)"], "numero_lacre_externo": ["text", "RF04e", "Número do lacre da outra instituição"], "observacao": ["text", "RF04e", "Observação livre"], "associado_por_id": ["uuid", "RF04e", "Quem registrou a referência"], "associado_em": ["timestamptz", "RF04e", "Data e hora do registro"]}, "cadeia_custodia": {"_": ["Histórico de cada evidência, encadeado por SHA-256. Só aceita inserção; número de sequência, hashes e data e hora vêm do banco.", "RF08, RF09, RF12 a RF20, RNF03, RNF04"], "id": ["uuid", "RF08, RF09", "Identificador do registro; entra no hash"], "evidencia_id": ["uuid", "RF08", "Evidência a que o registro pertence"], "numero_sequencia": ["integer", "RF08c, RF09", "1, 2, 3... sem buracos; o registro 1 é sempre \"coletado\"; preenchido pelo banco"], "acao": ["acao_custodia", "RF08, RF13g, RF18", "O que aconteceu: coletado, encaminhado, recebido, chegada a destino externo, em análise, analisado, armazenado, devolvido, lacre associado ou lacre rompido"], "registrado_por_id": ["uuid", "RF08, RF14", "Usuário logado que fez o registro"], "nome_responsavel_posse": ["text", "RF08, RF12b", "Quem tem a posse física; pode ser um transportador sem login"], "setor_atual_id": ["uuid", "RF14, RF17", "Setor onde a ação aconteceu; obrigatório em recebido, em análise e analisado"], "setor_destino_id": ["uuid", "RF08b, RF12", "Setor de destino em encaminhado e armazenado"], "destino_externo_nome": ["text", "RF13b", "Nome do destino fora do Instituto"], "destino_externo_endereco": ["text", "RF13b", "Endereço do destino fora do Instituto"], "endereco_local": ["text", "RF08c, RF13c", "Endereço em texto; obrigatório na coleta e na chegada a destino externo"], "lacre_id": ["uuid", "RF05, RF07", "Lacre envolvido; obrigatório só em lacre associado e lacre rompido"], "data_hora_registro": ["timestamptz", "RF08, RNF-S1", "Data e hora do servidor, nunca do aparelho"], "observacao": ["text", "RF08", "Observação livre"], "gps_obtido": ["boolean", "RF13c, RF13f", "Se o GPS do aparelho respondeu; falso não impede a operação"], "gps_latitude": ["numeric(9,6)", "RF02b, RF13f", "Latitude do aparelho no momento do registro"], "gps_longitude": ["numeric(9,6)", "RF02b, RF13f", "Longitude do aparelho no momento do registro"], "gps_precisao_metros": ["numeric(8,1)", "RF13f", "Precisão informada pelo navegador, em metros"], "cadastro_fora_do_local": ["boolean", "RF02b", "Só em \"coletado\": o cadastro foi feito longe do endereço informado"], "justificativa_fora_local": ["text", "RF02b", "Obrigatória quando o cadastro foi feito fora do local"], "hash_registro_anterior": ["char(64)", "RF09", "Hash do registro anterior; 64 zeros no primeiro"], "hash_registro": ["char(64)", "RF09, RNF04", "SHA-256 deste registro, calculado pelo banco"]}, "verificacao_integridade": {"_": ["Resultado de cada verificação de integridade feita sob demanda. Só aceita inserção.", "RF21, RF23"], "id": ["uuid", "RF21", "Identificador da verificação"], "evidencia_id": ["uuid", "RF21", "Evidência verificada"], "executada_por_id": ["uuid", "RF21", "Usuário que pediu a verificação"], "executada_em": ["timestamptz", "RF21, RF23", "Data e hora da verificação"], "total_registros": ["integer", "RF21", "Quantos registros foram conferidos"], "registros_divergentes": ["integer", "RF22", "Quantos registros não conferiram"], "cadeia_integra": ["boolean", "RF21, RF23", "Verdadeiro quando nenhum registro diverge; calculado pelo banco"], "hash_ultimo_registro": ["char(64)", "RF23", "Hash do último registro no momento da verificação; vai no relatório"]}, "verificacao_divergencia": {"_": ["Um registro por movimentação que não conferiu na verificação. Só aceita inserção.", "RF22"], "verificacao_id": ["uuid", "RF22", "Verificação em que a divergência apareceu"], "numero_sequencia": ["integer", "RF22", "Número do registro divergente na cadeia"], "cadeia_custodia_id": ["uuid", "RF22", "Registro divergente"], "tipo_divergencia": ["tipo_divergencia", "RF22", "Conteúdo alterado, elo quebrado ou sequência quebrada"], "hash_armazenado": ["char(64)", "RF22", "Hash que estava guardado"], "hash_recalculado": ["char(64)", "RF22", "Hash recalculado na verificação"]}, "log_acesso": {"_": ["Quem consultou ou exportou cada evidência (opcional no MVP). Só aceita inserção.", "RNF-S7"], "id": ["bigint", "RNF-S7", "Número sequencial do acesso"], "usuario_id": ["uuid", "RNF-S7", "Quem acessou"], "evidencia_id": ["uuid", "RNF-S7", "Evidência consultada"], "acao_acesso": ["acao_acesso", "RNF-S7, RF23", "Viu a evidência, viu a cadeia, exportou PDF ou CSV, ou verificou a integridade"], "endereco_ip": ["inet", "RNF-S7", "Endereço IP de quem acessou"], "navegador": ["text", "RNF-S7", "Identificação do navegador (user agent)"], "ocorrido_em": ["timestamptz", "RNF-S7", "Data e hora do acesso"]}};
 const DBORD=["setor", "usuario", "token_revogado", "ocorrencia", "ocorrencia_bo", "evidencia", "lote_lacre", "lacre", "lacre_referencia_externa", "cadeia_custodia", "verificacao_integridade", "verificacao_divergencia", "log_acesso"];
@@ -2698,6 +2707,22 @@ const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(
 const sha=async s=>hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)));
 const payload=r=>JSON.stringify([r.seq,r.evidenciaId,r.acao,r.registradoPor||'',r.responsavel,r.setorId||'',r.destino||'',r.local||'',r.dataHora,r.observacao||'',r.geo||'']);
 const hashRec=r=>sha(r.hashAnterior+'|'+payload(r));
+
+/* ---------- token JWT de cada pessoa (assinado com HMAC-SHA256 no navegador) ---------- */
+const TOKEN_HORAS=8,SEGREDO_DEMO='segredo-so-da-demonstracao';
+const b64u=s=>btoa(unescape(encodeURIComponent(s))).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
+const b64uBuf=b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/=+$/,'').replace(/\+/g,'-').replace(/\//g,'_');
+const uuid=()=>crypto.randomUUID?crypto.randomUUID():'10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+const lerToken=t=>JSON.parse(decodeURIComponent(escape(atob(t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))));
+const tokenValido=u=>u.ativo!==false&&u.token&&new Date(u.token.expiraEm)>new Date();
+function revogarToken(u){if(!u.token)return;(S.revogados||(S.revogados=[])).push({jti:u.token.jti,usuarioId:u.id,expiraEm:u.token.expiraEm,revogadoEm:new Date().toISOString()});u.token=null}
+async function emitirToken(u){
+  revogarToken(u);const agora=Math.floor(Date.now()/1000),jti=uuid();
+  const h=b64u(JSON.stringify({alg:'HS256',typ:'JWT'})),p=b64u(JSON.stringify({sub:u.id,nome:u.nome,matricula:u.matricula,email:u.email,perfil:u.papel,setor_id:u.setorId,jti,iat:agora,exp:agora+TOKEN_HORAS*3600}));
+  const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(SEGREDO_DEMO),{name:'HMAC',hash:'SHA-256'},false,['sign']);
+  const sig=b64uBuf(await crypto.subtle.sign('HMAC',k,new TextEncoder().encode(h+'.'+p)));
+  u.token={jti,valor:h+'.'+p+'.'+sig,emitidoEm:new Date(agora*1000).toISOString(),expiraEm:new Date((agora+TOKEN_HORAS*3600)*1000).toISOString()};return u.token}
+async function garantirTokens(){for(const u of S.users)if(u.ativo!==false&&!tokenValido(u))await emitirToken(u)}
 
 /* ---------- estado ---------- */
 const me=()=>S.users.find(u=>u.id===S.me);
@@ -2892,11 +2917,13 @@ lacres(){
 setores(){
   const adm=me().papel==='admin';
   return ph('Setores e usuários','O setor de cada pessoa decide quem pode confirmar o recebimento de uma evidência. O perfil decide quem pode analisar.',
-    `<span style="display:inline-block" data-req="RF10" data-db="setor.nome setor.ativo"><button class="btn pri" data-a="setor" data-id="" ${adm?'':'disabled'}>${ic('plus')}Novo setor</button></span>`)+
-  (adm?'':`<div class="banner c-blue">${ic('info')}<div>Só administradores criam e editam setores. Troque para Ana Ribeiro no seletor de usuário para testar.</div></div>`)+
+    `<span class="cell" style="gap:10px"><span style="display:inline-block" data-req="RF01 RF11 RF16 RNF02" data-db="usuario.nome usuario.matricula usuario.email usuario.senha_hash usuario.perfil usuario.setor_id"><button class="btn" data-a="pessoa" data-id="" ${adm?'':'disabled'}>${ic('plus')}Nova pessoa</button></span><span style="display:inline-block" data-req="RF10" data-db="setor.nome setor.ativo"><button class="btn pri" data-a="setor" data-id="" ${adm?'':'disabled'}>${ic('plus')}Novo setor</button></span></span>`)+
+  (adm?'':`<div class="banner c-blue">${ic('info')}<div>Só administradores cadastram pessoas e editam setores. Troque para Ana Ribeiro no seletor de usuário para testar.</div></div>`)+
   `<div class="sectors">${S.setores.map(s=>{const us=S.users.filter(u=>u.setorId===s.id),n=S.evidencias.filter(x=>x.setorAtualId===s.id).length;return `<section class="card"><div class="card-h"><div class="cell" data-req="RF10" data-db="setor.nome setor.ativo"><span class="tile c-${s.ativo?'blue':'slate'}">${ic('building')}</span><div><strong>${e(s.nome)}</strong><span class="small muted">${n} ${n===1?'evidência':'evidências'} no setor</span></div></div>
     <div class="cell" style="gap:6px">${pillS(s.ativo?'Ativo':'Inativo',s.ativo?'green':'slate')}${adm?`<button class="x" data-a="setor" data-id="${s.id}" data-req="RF10" data-db="setor.nome setor.ativo" aria-label="Editar ${e(s.nome)}">${ic('edit')}</button>`:''}</div></div>
-    ${us.length?`<ul class="people">${us.map(u=>`<li data-req="RF01 RF11" data-db="usuario.nome usuario.matricula usuario.email usuario.setor_id">${av(u,1)}<div><b>${e(u.nome)}</b><small>Matrícula ${e(u.matricula)} · ${e(u.email||'')}</small></div><span data-req="RF16" data-db="usuario.perfil" style="margin-left:auto">${pillS(PERFIL[u.papel],PCOR[u.papel])}</span></li>`).join('')}</ul>`:'<p class="card-b muted small">Nenhuma pessoa neste setor.</p>'}</section>`}).join('')}</div>`;
+    ${us.length?`<ul class="people">${us.map(u=>{const ve=adm||u.id===S.me;return `<li>${av(u,1)}<div data-req="RF01 RF11" data-db="usuario.nome usuario.matricula usuario.email usuario.setor_id"><b>${e(u.nome)}</b><small>Matrícula ${e(u.matricula)}</small><small class="em" title="${e(u.email||'')}">${e(u.email||'')}</small>
+      ${u.ativo===false?`<span class="tok off" data-req="RF01" data-db="usuario.ativo">Inativa: sem login e sem token</span>`:ve?`<button class="tok" data-a="token" data-id="${u.id}" data-req="RF01 RNF02 RNF-S4" data-db="token_revogado.id_token token_revogado.expira_em">${ic('lock')}Token ${tokenValido(u)?'até '+new Date(u.token.expiraEm).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'expirado'}</button>`:''}</div>
+      <span class="cell" style="gap:4px;margin-left:auto"><span data-req="RF16" data-db="usuario.perfil">${pillS(PERFIL[u.papel],PCOR[u.papel])}</span>${adm?`<button class="x" data-a="pessoa" data-id="${u.id}" data-req="RF01 RF11 RF16" data-db="usuario.nome usuario.perfil usuario.setor_id usuario.ativo" aria-label="Editar ${e(u.nome)}">${ic('edit')}</button>`:''}</span></li>`}).join('')}</ul>`:'<p class="card-b muted small">Nenhuma pessoa neste setor.</p>'}</section>`}).join('')}</div>`;
 },
 banco(){
   const q=(ui.dq||'').trim().toLowerCase();
@@ -2989,7 +3016,7 @@ function detalhe(ev){
 /* ---------- requisitos (conteúdo) ---------- */
 const RF=[
 ['Autenticação, perfis e setores',[
- ['RF01','sim','Login com autenticação JWT.','Aqui o login é a troca de usuário no menu, sem senha nem token.'],
+ ['RF01','sim','Login com autenticação JWT.','Aqui o login é a troca de usuário no menu. Cada pessoa cadastrada recebe um token JWT de verdade, assinado no navegador; a senha vira hash SHA-256 (no sistema real, bcrypt ou Argon2).'],
  ['RF16','ok','Três perfis de acesso: Perito (assume e conclui análises), Normal (recebe e transporta, não analisa) e Administrador (setores, tipos e lotes de lacre).','A tabela de escopo cita só dois perfis, e "gerenciar tipos" contradiz a lista fixa de tipos.'],
  ['RF10','ok','Administradores cadastram, editam, ativam, desativam e removem setores em um modal.'],
  ['RF11','ok','Todo usuário pertence a um setor do Instituto.']]],
@@ -3130,6 +3157,24 @@ const A={
  setor(d){const s=setor(d.id);modal(form('setor',{id:d.id,t:s?'Editar setor':'Novo setor',ok:'Salvar setor',extra:s?`<button type="button" class="btn danger" data-a="rmsetor" data-id="${s.id}" style="margin-right:auto">Remover setor</button>`:'',body:`
    <div class="f" data-req="RF10" data-db="setor.nome"><label for="nome">Nome</label><input name="nome" id="nome" value="${e(s?.nome)}" required></div>
    <label class="opt" data-req="RF10" data-db="setor.ativo"><input type="checkbox" name="ativo" ${!s||s.ativo?'checked':''}><span>Setor ativo<br><span class="hint">Aparece no encaminhamento e no cadastro de usuários</span></span></label><div style="height:10px"></div>`}))},
+ pessoa(d){if(me().papel!=='admin')return;const u=d.id?user(d.id):null,eu=u&&u.id===S.me;
+  modal(form('pessoa',{id:d.id,t:u?'Editar pessoa':'Nova pessoa',sub:u?'Mudar perfil ou setor gera um token novo e revoga o anterior.':'Ao cadastrar, o sistema gera o token de acesso (JWT) desta pessoa.',ok:u?'Salvar alterações':'Cadastrar e gerar token',body:`
+   <div class="f" data-req="RF01" data-db="usuario.nome"><label for="pnome">Nome completo</label><input name="nome" id="pnome" value="${e(u?.nome)}" required minlength="2" maxlength="160" autocomplete="off"></div>
+   <div class="two"><div class="f" data-req="RF01" data-db="usuario.matricula"><label for="pmat">Matrícula</label><input name="matricula" id="pmat" value="${e(u?.matricula)}" required inputmode="numeric" autocomplete="off"></div>
+   <div class="f" data-req="RF01" data-db="usuario.email"><label for="pmail">E-mail de acesso</label><input type="email" name="email" id="pmail" value="${e(u?.email)}" required autocomplete="off"></div></div>
+   <div class="two"><div class="f" data-req="RF16" data-db="usuario.perfil"><label for="pperfil">Perfil</label><select name="papel" id="pperfil">${Object.entries(PERFIL).map(([k,v])=>`<option value="${k}" ${(u?.papel||'normal')===k?'selected':''}>${v}</option>`).join('')}</select></div>
+   <div class="f" data-req="RF11" data-db="usuario.setor_id"><label for="setorId">Setor</label>${selSetor('setorId',u?.setorId)}</div></div>
+   <div class="f" data-req="RF01 RNF-S4" data-db="usuario.senha_hash"><label for="psenha">${u?'Nova senha':'Senha inicial'}</label><input type="password" name="senha" id="psenha" minlength="8" ${u?'':'required'} autocomplete="new-password"><p class="hint">${u?'Deixe em branco para manter a atual. ':''}Mínimo de 8 caracteres. Só o hash da senha é guardado.</p></div>
+   ${u?`<label class="opt" data-req="RF01" data-db="usuario.ativo"><input type="checkbox" name="ativo" ${u.ativo!==false?'checked':''} ${eu?'disabled':''}><span>Pessoa ativa<br><span class="hint">${eu?'Você não pode desativar a si mesma.':'Desativar revoga o token e impede o login.'}</span></span></label><div style="height:10px"></div>`:''}`}))},
+ token(d){const u=user(d.id),t=u.token,adm=me().papel==='admin';if(!adm&&u.id!==S.me)return;const p=t?lerToken(t.valor):null,[th,tp,ts]=t?t.valor.split('.'):[],nrev=(S.revogados||[]).filter(r=>r.usuarioId===u.id).length;
+  modal(`<div>${head(d.novo?`${e(u.nome)} cadastrada`:`Token de ${e(u.nome)}`,d.novo?`Token de acesso gerado. Ele expira em ${TOKEN_HORAS} horas.`:'Token JWT usado para acessar a API.',1)}<div class="db">
+   ${t?`<div class="f" data-req="RF01 RNF02" data-db="token_revogado.id_token"><label>Token JWT</label><div class="tokv" id="tokval"><span class="h">${th}</span>.<span class="p">${tp}</span>.<span class="s">${ts}</span></div><p class="hint">Cabeçalho, conteúdo e assinatura HMAC-SHA256.</p></div>
+   <dl class="kv" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div data-req="RF01 RNF02" data-db="token_revogado.id_token"><dt>Identificador (jti)</dt><dd class="mono">${e(p.jti)}</dd></div><div data-req="RNF02 RNF-S4" data-db="token_revogado.expira_em"><dt>Válido até</dt><dd>${fmt(t.expiraEm)}</dd></div>
+   <div data-req="RF16" data-db="usuario.perfil"><dt>Perfil no token</dt><dd>${PERFIL[p.perfil]}</dd></div><div data-req="RF11" data-db="usuario.setor_id"><dt>Setor no token</dt><dd>${e(sn(p.setor_id))}</dd></div></dl>
+   ${nrev?`<p class="hint" style="margin-top:12px" data-req="RF01" data-db="token_revogado.revogado_em token_revogado.usuario_id">${nrev} ${nrev===1?'token anterior revogado':'tokens anteriores revogados'}.</p>`:''}`:'<p class="muted">Esta pessoa está inativa e não tem token.</p>'}
+  </div><div class="df">${adm&&t?`<button type="button" class="btn" data-a="novotoken" data-id="${u.id}" data-req="RF01 RNF02" data-db="token_revogado.id_token token_revogado.revogado_em" style="margin-right:auto">Gerar novo token</button>`:''}${t?`<button type="button" class="btn" data-a="copiartoken" data-id="${u.id}">Copiar token</button>`:''}<button type="button" class="btn pri" data-a="close" data-n="1">Fechar</button></div></div>`)},
+ async novotoken(d){if(me().papel!=='admin')return;const u=user(d.id);await emitirToken(u);render();A.token({id:u.id});toast('Novo token gerado. O anterior foi revogado.')},
+ async copiartoken(d){const u=user(d.id);try{await navigator.clipboard.writeText(u.token.valor);toast('Token copiado.')}catch(_){const r=document.createRange();r.selectNodeContents($('#tokval'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Selecionei o token. Use Ctrl+C para copiar.')}},
  rmsetor(d){const f=$('#dlg1 form');if(S.users.some(u=>u.setorId===d.id))return ferr(f,'Há pessoas vinculadas a este setor. Mova-as antes de remover, ou apenas desative o setor.');
   if(S.evidencias.some(x=>x.setorAtualId===d.id||x.setorPendenteId===d.id)||Object.values(S.cadeia).some(c=>c.some(r=>r.setorId===d.id)))return ferr(f,'Este setor aparece em cadeias de custódia. Ele pode ser desativado, mas não removido.');
   S.setores=S.setores.filter(s=>s.id!==d.id);closeM();render();toast('Setor removido.')},
@@ -3214,6 +3259,19 @@ const F={
  gerar(d){if(me().papel!=='admin')return;const id=novoLote(me(),+d.qtd);ui.lote=id;done(`Lote ${id} gerado com ${d.qtd} lacres.`)},
  setor(d,f){const nome=d.nome.trim(),id=f.dataset.id;if(S.setores.some(s=>s.id!==id&&s.nome.toLowerCase()===nome.toLowerCase()))return ferr(f,'Já existe um setor com esse nome.');
    if(id)Object.assign(setor(id),{nome,ativo:!!d.ativo});else S.setores.push({id:'s'+(++S.seq)+'n',nome,ativo:!!d.ativo});done('Setor salvo.')},
+ async pessoa(d,f){if(me().papel!=='admin')return;const id=f.dataset.id,u=id?user(id):null,nome=d.nome.trim(),mat=d.matricula.trim(),mail=d.email.trim().toLowerCase();
+   if(nome.length<2)return ferr(f,'Informe o nome completo.');
+   if(S.users.some(x=>x.id!==id&&x.matricula===mat))return ferr(f,'Já existe uma pessoa com essa matrícula.');
+   if(S.users.some(x=>x.id!==id&&(x.email||'').toLowerCase()===mail))return ferr(f,'Já existe uma pessoa com esse e-mail.');
+   if(d.senha&&d.senha.length<8)return ferr(f,'A senha precisa ter ao menos 8 caracteres.');
+   if(u){const ativo=u.id===S.me?true:!!d.ativo;
+     if(u.papel==='admin'&&(d.papel!=='admin'||!ativo)&&!S.users.some(x=>x.id!==u.id&&x.papel==='admin'&&x.ativo!==false))return ferr(f,'O sistema precisa de ao menos um administrador ativo.');
+     const muda=u.papel!==d.papel||u.setorId!==d.setorId||u.nome!==nome||u.email!==mail||u.matricula!==mat;
+     Object.assign(u,{nome,matricula:mat,email:mail,papel:d.papel,setorId:d.setorId,ativo,atualizadoEm:new Date().toISOString()});if(d.senha)u.senhaHash=await sha(d.senha);
+     if(!ativo)revogarToken(u);else if(muda||!tokenValido(u))await emitirToken(u);
+     return done(!ativo?`${nome} desativada. O token foi revogado.`:muda?'Pessoa salva. Um novo token foi gerado.':'Pessoa salva.')}
+   const nu={id:'u'+(++S.seq)+'n',nome,matricula:mat,email:mail,papel:d.papel,setorId:d.setorId,ativo:true,senhaHash:await sha(d.senha),criadoEm:new Date().toISOString()};
+   S.users.push(nu);await emitirToken(nu);closeM();render();A.token({id:nu.id,novo:1});toast(`${nome} cadastrada no setor ${sn(nu.setorId)}.`)},
  async lacre(d,f){const err=await opAssociar(evById(f.dataset.id),me(),{externo:d.origem==='externo',emissor:d.emissor,numero:d.numero});if(err)return ferr(f,err);done('Lacre associado.')},
  async romper(d,f){await opRomper(evById(f.dataset.id),me(),d.motivo.trim());done('Rompimento registrado. Associe um novo lacre para liberar a evidência.')},
  ref(d,f){S.lacres.find(l=>l.id===f.dataset.id).refs.push({emissor:d.emissor,numero:d.numero.trim(),obs:d.obs.trim(),por:me().nome,em:new Date().toISOString()});done('Referência adicionada.')},
@@ -3236,7 +3294,7 @@ document.addEventListener('submit',async ev=>{ev.preventDefault();const f=ev.tar
 document.addEventListener('input',ev=>{const t=ev.target;if(!t.dataset.q)return;ui[t.dataset.q]=t.value;
   if(t.dataset.q==='q')$('#evrows').innerHTML=evRows();else if(t.dataset.q==='dq'){const v=views.banco(),m=v.match(/<div id="dblist">([\s\S]*)<\/div>$/);$('#dblist').innerHTML=m?m[1]:''}else $('#reqlist').innerHTML=reqList()});
 document.addEventListener('change',ev=>{const t=ev.target,f=t.form;
-  if(t.id==='user'){S.me=t.value;render();toast(`Agora você é ${me().nome}, ${PERFIL[me().papel]}, ${sn(me().setorId)}.`)}
+  if(t.id==='user'){S.me=t.value;if(!tokenValido(me()))emitirToken(me()).then(render);render();toast(`Agora você é ${me().nome}, ${PERFIL[me().papel]}, ${sn(me().setorId)}.`)}
   if(t.dataset.c){ui[t.dataset.c]=t.value;render()}
   if(t.name==='origem'){const x=t.value==='externo';f.querySelector('[data-ext]').hidden=!x;f.querySelector('[data-inst]').hidden=x;f.numero.setAttribute('list',x?'':'disp')}
   if(t.name==='fora')f.querySelector('[data-just]').hidden=t.value!=='sim';
@@ -3249,7 +3307,7 @@ let tipEl=null,tipT=null;
 function tipShow(el){
   const ids=(el.dataset.req||'').split(/\s+/).filter(Boolean),dbs=(el.dataset.db||'').split(/\s+/).filter(Boolean);if(!ids.length&&!dbs.length)return;
   const dbl=dbs.map(k=>{const[t,c]=k.split('.');if(!DBD[t])return '';if(!c)return `<div class="dbl"><code>tabela ${e(t)}</code><span>${e(curto(DBD[t]._[0]))}</span></div>`;const v=DBD[t][c];return v?`<div class="dbl"><code>${e(t)}.${e(c)}</code><span>${e(curto(v[2]))}</span></div>`:''}).join('');
-  tip.innerHTML=ids.map(k=>`<div><b>${e(k.split('-')[0])}</b><span>${e(SHORT[k]||'')}</span></div>`).join('')+(dbl?`<div class="${ids.length?'tdb':'tdb0'}"><div class="tl1">No banco de dados</div>${dbl}</div>`:'');
+  tip.innerHTML=ids.map(k=>`<div><b>${e(k.replace(/-oc$/,''))}</b><span>${e(SHORT[k]||'')}</span></div>`).join('')+(dbl?`<div class="${ids.length?'tdb':'tdb0'}"><div class="tl1">No banco de dados</div>${dbl}</div>`:'');
   (el.closest('dialog')||document.body).append(tip);
   const r=el.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
   let y=r.top-h-8;if(y<8)y=r.bottom+8;
@@ -3275,9 +3333,9 @@ function chrome(v){
   $('#nav').innerHTML=NAV.map(n=>`<a href="#${n[0]}"${rq(n[3],NDB[n[0]])} ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1]}${cnt[n[0]]||''}</a>`).join('');
   $('#tabbar').innerHTML=NAV.map(n=>`<a href="#${n[0]}" ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1].split(' ')[0]}</a>`).join('');
   $('#me').innerHTML=`${av(u)}<div><b>${e(u.nome)}</b><span>${PERFIL[u.papel]}, ${e(sn(u.setorId))}</span></div>`;
-  $('#user').innerHTML=S.users.map(x=>`<option value="${x.id}" ${x.id===S.me?'selected':''}>${e(x.nome)} (${PERFIL[x.papel]}, ${e(sn(x.setorId))})</option>`).join('');
+  $('#user').innerHTML=S.users.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}" ${x.id===S.me?'selected':''}>${e(x.nome)} (${PERFIL[x.papel]}, ${e(sn(x.setorId))})</option>`).join('');
   $('.reset').innerHTML=ic('refresh')+'Restaurar dados de exemplo';
-  $('#proto').innerHTML=ic('info')+'<span>Protótipo: os dados ficam só neste navegador. Câmera, GPS, PDF e login com senha estão simulados; o hash SHA-256 é real.</span>';
+  $('#proto').innerHTML=ic('info')+'<span>Protótipo: os dados ficam só neste navegador. Câmera, GPS, PDF e login com senha estão simulados; o hash SHA-256 e o token JWT de cada pessoa são reais.</span>';
 }
 function render(){
   save();let v=location.hash.slice(1);if(!views[v])v='evidencias';
@@ -3287,7 +3345,7 @@ function render(){
   if(!window.crypto||!crypto.subtle){$('#main').innerHTML='<p class="err">Este navegador não oferece SHA-256 (Web Crypto). Abra a página em um navegador atual, por HTTPS.</p>';return}
   try{S=JSON.parse(localStorage.getItem(KEY))}catch(_){S=null}
   if(!S||S.ver!==3){await seed()}
-  render();
+  await garantirTokens();render();
 })();
 </script>
 </body>
