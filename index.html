@@ -2612,9 +2612,53 @@ button[data-req],button[data-db],a[data-req],[data-req] button,[data-db] button,
 }
 @media (prefers-reduced-motion:no-preference){dialog[open]{animation:pop .16s ease-out}}
 @keyframes pop{from{opacity:0;transform:translateY(8px)}}
+/* ---------- tela de entrada ---------- */
+body.out .app,body.out .tabbar{display:none}
+#login{display:none;min-height:100vh;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+body.out #login{display:grid}
+.lg-art{position:relative;overflow:hidden;background:var(--ink);color:#C7D2DF;padding:40px 48px;display:flex;flex-direction:column}
+.lg-art .brand{padding:0}
+.lg-art h1{color:#fff;font-size:2.35rem;line-height:1.12;letter-spacing:-.02em;max-width:14ch;margin-top:auto}
+.lg-art p{max-width:42ch;margin-top:16px;color:#A9B7C7;font-size:1rem}
+.lg-art ul{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:10px;font-size:.9rem}
+.lg-art li{display:flex;gap:10px;align-items:center}
+.lg-art li svg{color:#7AA2FF}
+.fita{position:absolute;left:-12%;right:-12%;top:118px;height:46px;transform:rotate(-7deg);background:repeating-linear-gradient(-45deg,var(--red) 0 16px,#fff 16px 24px);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.fita span{background:#fff;color:var(--ink);font:600 .82rem/1 var(--mono);letter-spacing:.06em;padding:8px 14px;border-radius:4px}
+.lg-foot{margin-top:40px;font-size:.78rem;color:#7F90A3}
+.lg-form{display:flex;align-items:center;justify-content:center;padding:40px 24px;background:var(--bg)}
+.lg-box{width:100%;max-width:400px}
+.lg-box h2{font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+.lg-box>p{color:var(--muted);margin:6px 0 26px}
+.lg-box .f{margin-bottom:16px}
+.lg-box .f input{padding:11px 12px}
+.pw{position:relative}.pw input{padding-right:46px!important}
+.pw button{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:0;padding:8px;color:var(--muted);cursor:pointer;border-radius:6px}
+.lg-row{display:flex;justify-content:space-between;align-items:center;margin:-4px 0 20px;font-size:.86rem}
+.lg-row label{display:flex;gap:7px;align-items:center;color:var(--text)}
+.lnk{background:none;border:0;padding:0;color:var(--pri);font-weight:600;cursor:pointer}
+.lg-box .btn.pri{width:100%;min-height:46px;font-size:1rem}
+.lg-demo{margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.lg-demo b{display:block;font-size:.82rem;color:var(--muted);font-weight:500;margin-bottom:10px}
+.lg-demo div{display:flex;flex-wrap:wrap;gap:8px}
+.lg-demo button{display:flex;gap:8px;align-items:center;background:#fff;border:1px solid var(--line2);border-radius:999px;padding:4px 12px 4px 4px;cursor:pointer;font-size:.84rem}
+.lg-demo button:hover{border-color:var(--pri)}
+.lg-demo small{color:var(--muted)}
+.lg-note{display:flex;gap:8px;margin-top:22px;font-size:.8rem;color:var(--muted)}
+.sair{background:none;border:0;color:#93A3B5;font-size:.8rem;padding:6px 0 0;cursor:pointer;display:flex;gap:6px;align-items:center}
+.sair:hover,.reset:hover{color:#fff}
+@media (max-width:860px){
+  #login{grid-template-columns:1fr}
+  .lg-art{padding:24px 22px 28px}
+  .lg-art h1{font-size:1.6rem;margin-top:86px}
+  .lg-art ul,.lg-foot{display:none}
+  .fita{top:74px;height:34px}
+  .lg-form{padding:28px 20px 40px;align-items:flex-start}
+}
 </style>
 </head>
 <body>
+<div id="login"></div>
 <div class="app">
   <aside class="side">
     <div class="brand"><span class="mark" aria-hidden="true"></span><div><b>Cadeia de Custódia</b><span>Instituto de Criminalística</span></div></div>
@@ -2624,6 +2668,7 @@ button[data-req],button[data-db],a[data-req],[data-req] button,[data-db] button,
       <label for="user">Usuário em uso (login simulado)</label>
       <select id="user" data-req="RF01 RF16" data-db="usuario.nome usuario.perfil usuario.setor_id"></select>
       <button class="reset" data-a="reset">Restaurar dados de exemplo</button>
+      <button class="sair" data-a="sair" data-req="RF01 RNF02" data-db="token_revogado.id_token token_revogado.revogado_em"></button>
     </div>
   </aside>
   <div class="content">
@@ -2653,6 +2698,8 @@ const LST={disponivel:['Disponível','green'],vinculado:['Vinculado','blue'],rom
 const ACAO={'Coletado':['box','blue'],'Lacre associado':['lock','green'],'Lacre rompido':['unlock','red'],'Encaminhado':['truck','amber'],'Recebido':['inbox','blue'],'Chegada confirmada em destino externo':['pin','blue'],'Em análise':['flask','violet'],'Analisado':['check','green'],'Armazenado':['archive','slate'],'Devolvido':['undo','slate']};
 const P={
  box:'<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+ eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ logout:'<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
  unlock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 017.5-2"/>',
  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 010 5.6M17.5 14.3c2 .8 3.5 2.9 3.5 5.7"/>',
@@ -3121,6 +3168,10 @@ function fillDisp(){const d=$('#disp');if(d)d.innerHTML=S.lacres.filter(l=>!l.ex
 
 const A={
  close:d=>closeM(+d.n||1),
+ sair(){revogarToken(me());S.logado=false;render();window.scrollTo(0,0);toast('Você saiu. O token foi revogado.')},
+ entrarcomo(d){entrarComo(user(d.id))},
+ versenha(){const i=$('#lgpw'),b=i.nextElementSibling,v=i.type==='password';i.type=v?'text':'password';b.setAttribute('aria-label',v?'Ocultar senha':'Mostrar senha')},
+ esqueci(){toast('Peça a redefinição ao administrador do seu setor.')},
  filtro(d){ui[d.g]=d.v;render()},
  abrir(d){ui.sel=d.id||null;if(location.hash!=='#evidencias')location.hash='evidencias';else render();window.scrollTo(0,0)},
  lote(d){ui.lote=d.id||null;render();window.scrollTo(0,0)},
@@ -3253,6 +3304,10 @@ async function salvarNova(confirmado){
 
 const F={
  nova:()=>salvarNova(false),
+ async entrar(d,f){const id=(d.id||'').trim().toLowerCase();if(!id||!d.senha)return ferr(f,'Informe o e-mail ou a matrícula e a senha.');
+   const ativos=S.users.filter(u=>u.ativo!==false),u=ativos.find(x=>(x.email||'').toLowerCase()===id||x.matricula===id);
+   const inativo=S.users.find(x=>x.ativo===false&&((x.email||'').toLowerCase()===id||x.matricula===id));if(inativo)return ferr(f,'Este acesso está desativado. Fale com o administrador.');
+   await entrarComo(u||user('u1')||ativos[0])},
  oc(d){draftOc=d;closeM(2);const t=[d.gigante&&'GIGANTE '+d.gigante,d.bos,d.delegacia].filter(Boolean).join(', ');const el=$('#ocres');el.textContent=t||(Object.values(d).some(v=>v.trim())?'Dados de ocorrência informados':'Nenhuma ocorrência vinculada');el.className=t?'':'muted';
    const ex=d.gigante&&S.ocorrencias.find(o=>o.gigante.toLowerCase()===d.gigante.trim().toLowerCase());if(ex)toast('Código GIGANTE já cadastrado: a evidência entrará na ocorrência existente.')},
  async transp(d,f){await opEncaminhar(evById(f.dataset.id),me(),{setorId:d.setorId,transportador:d.transportador});done('Encaminhamento registrado.')},
@@ -3335,9 +3390,33 @@ function chrome(v){
   $('#me').innerHTML=`${av(u)}<div><b>${e(u.nome)}</b><span>${PERFIL[u.papel]}, ${e(sn(u.setorId))}</span></div>`;
   $('#user').innerHTML=S.users.filter(x=>x.ativo!==false).map(x=>`<option value="${x.id}" ${x.id===S.me?'selected':''}>${e(x.nome)} (${PERFIL[x.papel]}, ${e(sn(x.setorId))})</option>`).join('');
   $('.reset').innerHTML=ic('refresh')+'Restaurar dados de exemplo';
+  $('.sair').innerHTML=ic('logout')+'Sair';
   $('#proto').innerHTML=ic('info')+'<span>Protótipo: os dados ficam só neste navegador. Câmera, GPS, PDF e login com senha estão simulados; o hash SHA-256 e o token JWT de cada pessoa são reais.</span>';
 }
+function telaEntrada(){
+  const ex=['u1','u2','u3'].map(user).filter(u=>u&&u.ativo!==false);
+  $('#login').innerHTML=`<section class="lg-art" aria-hidden="false">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><div><b>Cadeia de Custódia</b><span>Instituto de Criminalística</span></div></div>
+    <div class="fita" aria-hidden="true"><span>LACRE Nº IC-2026-000184</span></div>
+    <h1>Da coleta ao laudo, sem perder o rastro.</h1>
+    <p>Registre, encaminhe e confira cada evidência. Todo registro fica encadeado ao anterior e não pode ser alterado.</p>
+    <ul><li data-req="RF02 RF03" data-db="evidencia.foto_hash_sha256">${ic('box')}Cadastro com foto e SHA-256 do arquivo</li><li data-req="RF04 RF05" data-db="lacre.numero_lacre">${ic('tag')}Lacres numerados com QR code</li><li data-req="RF09 RF21" data-db="cadeia_custodia.hash_registro">${ic('lock')}Histórico encadeado e verificável</li></ul>
+    <div class="lg-foot">Uso restrito a servidores do Instituto. Os acessos são registrados.</div></section>
+  <section class="lg-form"><form class="lg-box" data-f="entrar" novalidate>
+    <h2>Entrar</h2><p>Use seu e-mail institucional ou sua matrícula.</p>
+    <div class="f" data-req="RF01" data-db="usuario.email usuario.matricula"><label for="lgid">E-mail ou matrícula</label><input id="lgid" name="id" autocomplete="username" placeholder="nome@ic.gov.br"></div>
+    <div class="f" data-req="RF01 RNF-S4" data-db="usuario.senha_hash"><label for="lgpw">Senha</label><div class="pw"><input id="lgpw" name="senha" type="password" autocomplete="current-password"><button type="button" data-a="versenha" aria-label="Mostrar senha">${ic('eye')}</button></div></div>
+    <div class="lg-row"><label><input type="checkbox" name="lembrar">Manter conectado</label><button type="button" class="lnk" data-a="esqueci">Esqueci minha senha</button></div>
+    <p class="err" role="alert" hidden></p>
+    <span style="display:block" data-req="RF01 RNF02" data-db="usuario.ultimo_login_em usuario.ativo token_revogado.id_token"><button class="btn pri">Entrar</button></span>
+    <div class="lg-demo"><b>Ou entre com um perfil de exemplo</b><div>${ex.map(u=>`<button type="button" data-a="entrarcomo" data-id="${u.id}" data-req="RF16" data-db="usuario.perfil usuario.setor_id">${av(u,1)}<span>${e(u.nome.split(' ')[0])} <small>${PERFIL[u.papel]}</small></span></button>`).join('')}</div></div>
+    <div class="lg-note">${ic('info')}<span>Protótipo sem banco de dados: a senha não é conferida. Se o e-mail ou a matrícula for de alguém cadastrado, você entra como essa pessoa.</span></div>
+  </form></section>`;
+}
+async function entrarComo(u){S.me=u.id;S.logado=true;u.ultimoLoginEm=new Date().toISOString();await emitirToken(u);document.body.classList.remove('out');if(!location.hash)location.hash='evidencias';render();window.scrollTo(0,0);toast(`Bem-vinda, ${u.nome.split(' ')[0]}. Token de acesso gerado.`.replace('Bem-vinda',/a$/.test(u.nome.split(' ')[0])?'Bem-vinda':'Bem-vindo'))}
 function render(){
+  if(!S.logado){save();document.body.classList.add('out');telaEntrada();return}
+  document.body.classList.remove('out');
   save();let v=location.hash.slice(1);if(!views[v])v='evidencias';
   chrome(v);$('#main').innerHTML=views[v]();
 }
