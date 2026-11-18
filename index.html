@@ -1,0 +1,3247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cadeia de Custódia de Evidências: protótipo do MVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>/* qrcode-generator 1.4.4, MIT, Kazuhiko Arase */
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<style>
+:root{
+  --bg:#F3F5F8; --card:#fff; --ink:#0E1A2B; --text:#1B2A3D; --muted:#5A6A7D; --faint:#8593A3;
+  --line:#E2E7ED; --line2:#C9D2DC; --soft:#F6F8FA;
+  --pri:#1D4ED8; --pri-h:#173FB3; --pri-bg:#E9EFFF;
+  --red:#C8102E; --red-bg:#FDECEF; --red-ink:#8E0B20;
+  --amber:#A15C00; --amber-bg:#FFF1CC; --green:#0A7A55; --green-bg:#E2F5EC;
+  --violet:#5B3FD6; --violet-bg:#EEEAFE; --slate:#475569; --slate-bg:#EBEEF2;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --sh:0 1px 2px rgba(14,26,43,.05),0 4px 14px rgba(14,26,43,.05);
+  --r:12px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:400 15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+h1,h2,h3,h4,p{margin:0}
+h1{font-size:1.6rem;font-weight:700;line-height:1.2;color:var(--ink);letter-spacing:-.01em}
+h2{font-size:1.05rem;font-weight:600;color:var(--ink)}
+h3{font-size:1.15rem;font-weight:600;color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:3px solid #7AA2FF;outline-offset:2px;border-radius:6px}
+.mono{font-family:var(--mono);font-size:.86em}
+td .mono,td.mono{white-space:nowrap}
+.evt td:first-child{min-width:290px}
+.sectors .card-h{flex-wrap:nowrap}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.c-blue{--c:var(--pri);--cb:var(--pri-bg)} .c-red{--c:var(--red);--cb:var(--red-bg)} .c-amber{--c:var(--amber);--cb:var(--amber-bg)}
+.c-green{--c:var(--green);--cb:var(--green-bg)} .c-violet{--c:var(--violet);--cb:var(--violet-bg)} .c-slate{--c:var(--slate);--cb:var(--slate-bg)}
+
+/* estrutura */
+.app{display:grid;grid-template-columns:256px minmax(0,1fr);min-height:100vh}
+.side{background:var(--ink);color:#C7D2DF;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;padding:20px 14px 16px}
+.brand{display:flex;gap:12px;align-items:center;padding:0 8px 22px}
+.mark{width:38px;height:38px;border-radius:9px;flex:none;background:repeating-linear-gradient(-45deg,var(--red) 0 7px,#fff 7px 10px);border:2px solid #fff}
+.brand b{display:block;color:#fff;font-size:1rem;line-height:1.2}
+.brand span{font-size:.78rem;color:#93A3B5}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;color:#C7D2DF;text-decoration:none;font-weight:500}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a[aria-current=page]{background:rgba(255,255,255,.11);color:#fff}
+.nav em{margin-left:auto;font-style:normal;font-size:.76rem;background:rgba(255,255,255,.12);padding:1px 8px;border-radius:99px}
+.nav em.hot{background:var(--red);color:#fff}
+.side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.12);padding:14px 6px 0}
+.me{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.me b{color:#fff;display:block;line-height:1.2}
+.me span{font-size:.78rem;color:#93A3B5}
+.side label{font-size:.76rem;color:#93A3B5;display:block;margin-bottom:4px}
+.side select{width:100%;background:#1A2940;color:#fff;border:1px solid #334861;border-radius:8px;padding:8px 10px}
+.reset{background:none;border:0;color:#93A3B5;font-size:.8rem;padding:10px 0 0;cursor:pointer;display:flex;gap:6px;align-items:center}
+.reset:hover{color:#fff}
+.reset svg{width:14px;height:14px}
+.av{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:.82rem;color:#fff;flex:none;background:var(--avc,#3B5B8C)}
+.av.sm{width:28px;height:28px;font-size:.7rem}
+.content{min-width:0}
+.proto{display:flex;gap:8px;align-items:center;background:#fff;border-bottom:1px solid var(--line);padding:9px 32px;font-size:.84rem;color:var(--muted)}
+.proto svg{color:var(--pri)}
+main{padding:28px 32px 72px;max-width:1240px}
+.tabbar{display:none}
+
+/* cabeçalho de página */
+.ph{display:flex;flex-wrap:wrap;gap:14px;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+.ph p{color:var(--muted);margin-top:4px;max-width:68ch}
+.crumb{display:flex;gap:6px;align-items:center;font-size:.86rem;color:var(--muted);margin-bottom:14px}
+.crumb button{background:none;border:0;padding:0;color:var(--pri);cursor:pointer;font-weight:500}
+.crumb svg{width:14px;height:14px}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid var(--line2);border-radius:8px;padding:9px 15px;font-weight:600;cursor:pointer;min-height:40px;color:var(--ink);text-decoration:none}
+.btn:hover{background:var(--soft);border-color:#AEB9C6}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{background:var(--pri-h)}
+.btn.danger{color:var(--red);border-color:#EBB5BE}
+.btn.danger:hover{background:var(--red-bg)}
+.btn.ghost{border-color:transparent;background:none;color:var(--pri);padding:6px 8px;min-height:0}
+.btn.ghost:hover{background:var(--pri-bg)}
+.btn:disabled,.btn.pri:disabled{cursor:not-allowed;background:var(--slate-bg);border-color:var(--line2);color:var(--faint)}
+.btn.block{width:100%}
+
+/* cartões */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.card-h{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.card-b{padding:18px 20px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.stat{display:flex;gap:14px;align-items:center;text-align:left;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;cursor:pointer;box-shadow:var(--sh)}
+.stat:hover{border-color:var(--line2)}
+.stat[aria-pressed=true]{border-color:var(--c);box-shadow:0 0 0 2px var(--cb),var(--sh)}
+.tile{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:var(--cb);color:var(--c);flex:none}
+.tile svg{width:21px;height:21px}
+.stat b{display:block;font-size:1.55rem;line-height:1.1;color:var(--ink);font-weight:700}
+.stat span{font-size:.86rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:.78rem;font-weight:600;background:var(--cb);color:var(--c);white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.solid{background:var(--red);color:#fff}
+.chip{font-family:var(--mono);font-size:.78rem;font-weight:500;background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:2px 7px;color:var(--ink);white-space:nowrap}
+
+/* barra de ferramentas e tabela */
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+.search{position:relative;flex:1;min-width:200px;max-width:360px}
+.search svg{position:absolute;left:11px;top:11px;color:var(--faint)}
+.search input{width:100%;padding:9px 12px 9px 36px;border:1px solid var(--line2);border-radius:8px;background:#fff}
+.tools select{padding:9px 10px;border:1px solid var(--line2);border-radius:8px;background:#fff}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th{font-size:.76rem;font-weight:600;color:var(--muted);text-align:left;padding:10px 20px;background:var(--soft);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:14px 20px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tr.go{cursor:pointer}
+tr.go:hover td{background:#F8FAFD}
+tr.alert td{background:#FFF7F8}
+tr.alert td:first-child{box-shadow:inset 4px 0 0 var(--red)}
+.cell{display:flex;gap:12px;align-items:center}
+.cell strong{display:block;color:var(--ink);font-weight:600}
+.empty{padding:44px 20px;text-align:center;color:var(--muted)}
+
+/* avisos */
+.banner{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border-radius:var(--r);padding:14px 18px;margin-bottom:18px;background:var(--cb);color:var(--c);border:1px solid var(--c)}
+.banner.c-red{color:var(--red-ink)}
+.banner.tape{border:0;color:#fff;background:repeating-linear-gradient(-45deg,var(--red) 0 16px,#A90D26 16px 32px)}
+.banner div{flex:1;min-width:220px}
+.banner b{display:block}
+.banner svg{width:24px;height:24px}
+.banner .btn{border-color:transparent}
+
+/* detalhe */
+.hero{padding:22px 24px}
+.hero-top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.hero h1{margin-top:6px}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.kv dt,.dl dt{font-size:.76rem;color:var(--muted);margin-bottom:2px}
+.kv dd,.dl dd{margin:0;color:var(--ink);font-weight:500;overflow-wrap:anywhere}
+.dl{display:grid;gap:12px;margin:0}
+.steps{display:flex;list-style:none;margin:22px 0 0;padding:0}
+.steps li{flex:1;position:relative;text-align:center;font-size:.78rem;color:var(--faint);padding-top:30px}
+.steps li::before{content:"";position:absolute;top:10px;left:-50%;right:50%;height:2px;background:var(--line2)}
+.steps li:first-child::before{display:none}
+.steps li::after{content:"";position:absolute;top:3px;left:50%;margin-left:-8px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--line2)}
+.steps li.done{color:var(--text)}
+.steps li.done::before,.steps li.now::before{background:var(--pri)}
+.steps li.done::after{background:var(--pri);border-color:var(--pri)}
+.steps li.now{color:var(--ink);font-weight:600}
+.steps li.now::after{border-color:var(--pri);box-shadow:0 0 0 4px var(--pri-bg)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start;margin-top:20px}
+.stack{display:grid;gap:20px}
+.act{margin-top:10px}
+.act:first-of-type{margin-top:0}
+.why{display:flex;gap:8px;font-size:.82rem;color:var(--red-ink);background:var(--red-bg);border-radius:8px;padding:8px 10px;margin-top:6px}
+.why svg{width:15px;height:15px;margin-top:2px}
+
+/* integridade + linha do tempo */
+.integ{display:flex;gap:12px;align-items:center;margin:18px 20px 0;padding:12px 14px;border-radius:10px;background:var(--cb);color:var(--c)}
+.integ.c-slate{color:var(--muted)}
+.integ.c-red{color:var(--red-ink)}
+.integ b{display:block;color:inherit}
+.tl{list-style:none;margin:0;padding:18px 20px 6px}
+.tl li{display:grid;grid-template-columns:48px minmax(0,1fr);position:relative;padding-bottom:18px}
+.tl li::before{content:"";position:absolute;left:17px;top:36px;bottom:0;width:2px;background:var(--line)}
+.tl li:last-child::before{display:none}
+.node{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--cb);color:var(--c);position:relative;z-index:1}
+.rec{border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.rec-h{display:flex;gap:10px;justify-content:space-between;align-items:baseline;flex-wrap:wrap}
+.rec h4{font-size:.98rem;font-weight:600;color:var(--ink)}
+.rec time{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.rec .who{font-size:.86rem;color:var(--muted);margin-top:1px}
+.rec .obs{margin-top:8px;overflow-wrap:anywhere}
+.hash{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line2);font-size:.76rem;color:var(--muted)}
+.hash code{font-family:var(--mono);color:var(--ink);background:var(--soft);padding:2px 6px;border-radius:5px}
+.hash svg{width:14px;height:14px}
+.vf{font-size:.74rem;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--cb);color:var(--c)}
+.tl li.bad .rec{border-color:var(--red);background:#FFF7F8;box-shadow:0 0 0 3px var(--red-bg)}
+.tl li.bad .node{background:var(--red);color:#fff}
+.tl li.bad::before{background:repeating-linear-gradient(0deg,var(--red) 0 5px,transparent 5px 9px)}
+.badmsg{margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--red-bg);color:var(--red-ink);font-size:.86rem}
+.tl-foot{padding:12px 20px;border-top:1px solid var(--line);background:var(--soft);border-radius:0 0 var(--r) var(--r);font-size:.84rem;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+
+/* etiqueta de lacre */
+.seal{display:grid;grid-template-columns:12px minmax(0,1fr) auto;background:#fff;border:1.5px solid var(--ink);border-radius:5px;min-height:86px;overflow:hidden}
+.seal i{background:repeating-linear-gradient(0deg,var(--red) 0 8px,#fff 8px 11px)}
+.seal div{padding:8px 12px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.seal b{font-family:var(--mono);font-size:.92rem;white-space:nowrap;color:var(--ink)}
+.seal span{font-size:.72rem;color:var(--muted);line-height:1.3}
+.seal svg{width:68px;height:68px;margin:8px;display:block}
+.seal.broken{border-style:dashed;border-color:var(--red);opacity:.85}
+.labels{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;padding:20px;border:1px dashed var(--line2);border-radius:10px;background:var(--soft)}
+.lots{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:20px}
+.lot{padding:16px}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:var(--green)}
+details summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--pri);margin-top:12px}
+
+/* setores */
+.sectors{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.people{list-style:none;margin:0;padding:6px 20px 14px}
+.people li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.people li:first-child{border-top:0}
+.people b{display:block;font-weight:600;color:var(--ink);line-height:1.2}
+.people small{color:var(--muted)}
+.people .pill{margin-left:auto}
+
+/* requisitos */
+.issues{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.issue{padding:16px;display:flex;gap:12px}
+.issue p{margin-top:4px}
+.fix{margin-top:10px!important;padding:8px 10px;background:var(--soft);border-radius:8px;font-size:.86rem}
+.sec{margin:30px 0 12px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.sec h2{font-size:1.25rem}
+.req{display:grid;grid-template-columns:86px minmax(0,1fr) 150px;gap:6px 16px;padding:13px 20px;border-bottom:1px solid var(--line);align-items:start}
+.req:last-child{border-bottom:0}
+.req .note{grid-column:2/-1;display:flex;gap:8px;font-size:.84rem;color:var(--amber);background:var(--amber-bg);padding:6px 10px;border-radius:8px}
+.req .note svg{width:15px;height:15px;margin-top:2px}
+.req .pill{justify-self:end}
+
+/* diálogos */
+dialog{border:0;border-radius:14px;padding:0;width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 24px);color:var(--text);box-shadow:0 24px 64px rgba(14,26,43,.35);overflow:hidden}
+dialog[open]{display:flex}
+dialog::backdrop{background:rgba(14,26,43,.55)}
+dialog form,dialog .dwrap{display:flex;flex-direction:column;min-height:0;width:100%}
+.dh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.dh p{font-size:.86rem;color:var(--muted);margin-top:3px}
+.x{background:none;border:0;padding:6px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.x:hover{background:var(--soft)}
+.db{padding:20px 22px;overflow-y:auto}
+.df{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--line);background:var(--soft)}
+.f{margin-bottom:14px}
+.f label,.f legend{display:block;font-weight:600;font-size:.86rem;margin-bottom:5px;padding:0;color:var(--ink)}
+.f input:not([type=radio]):not([type=checkbox]),.f select,.f textarea{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:8px;background:#fff}
+.f input:disabled{background:var(--soft);color:var(--muted)}
+.f textarea{min-height:76px;resize:vertical}
+.hint{font-size:.8rem;color:var(--muted);margin-top:4px}
+fieldset.f{border:0;padding:0;margin:0 0 14px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{display:flex!important;gap:10px;align-items:flex-start;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-weight:500!important;cursor:pointer;margin:0!important}
+.opt:has(input:checked){border-color:var(--pri);background:var(--pri-bg)}
+.opt input{margin-top:3px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.fs{font-size:.76rem;font-weight:600;color:var(--muted);margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.fs:first-child{margin-top:0}
+.err{background:var(--red-bg);color:var(--red-ink);border-radius:8px;padding:10px 12px;font-size:.9rem;margin-top:4px}
+.warn{background:var(--amber-bg);color:var(--amber);border-radius:8px;padding:10px 12px;font-size:.9rem;margin-bottom:14px}
+.ocbox{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px dashed var(--line2);border-radius:10px;padding:12px 14px}
+#tip{position:fixed;z-index:300;left:0;top:0;max-width:300px;background:var(--ink);color:#fff;border-radius:8px;padding:8px 11px;font-size:.8rem;line-height:1.35;pointer-events:none;box-shadow:0 8px 24px rgba(14,26,43,.28);opacity:0;transition:opacity .12s ease}
+#tip.on{opacity:1}
+#tip div{display:flex;gap:9px;align-items:baseline}
+#tip div+div{margin-top:3px}
+#tip b{font-family:var(--mono);font-weight:600;color:#A9C1FF;white-space:nowrap;min-width:44px}
+[data-req]{cursor:help}
+button[data-req],a[data-req],select[data-req],[data-req] button,[data-req] select,[data-req] a{cursor:pointer}
+.btn:disabled{pointer-events:none}
+@media (prefers-reduced-motion:reduce){#tip{transition:none}}
+#toast{position:fixed;right:24px;bottom:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;max-width:min(420px,calc(100vw - 32px));z-index:99;box-shadow:0 10px 30px rgba(14,26,43,.3)}
+#toast:empty{display:none}
+
+@media (max-width:1080px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}.kv{grid-template-columns:repeat(2,minmax(0,1fr))}.issues{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px}
+  .brand{padding:0;flex:1}
+  .side .nav,.me,.reset{display:none}
+  .side-foot{margin:0;border:0;padding:0;width:100%}
+  .proto{padding:8px 16px}
+  main{padding:20px 16px 96px}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;font-size:.72rem;color:var(--muted);text-decoration:none}
+  .tabbar a[aria-current=page]{color:var(--pri);font-weight:600}
+  #toast{right:16px;bottom:76px}
+  h1{font-size:1.35rem}
+  .evt thead{display:none}
+  .evt tr{display:block;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .evt td{display:block;border:0;padding:3px 0;background:none!important;box-shadow:none!important}
+  .evt td[data-l]::before{content:attr(data-l) ": ";color:var(--muted);font-size:.8rem}
+  .evt tr.alert{box-shadow:inset 4px 0 0 var(--red);background:#FFF7F8}
+  .steps li{font-size:0;padding-top:24px}
+  .steps li.now{font-size:.76rem}
+  .two,.opts{grid-template-columns:1fr}
+  .req{grid-template-columns:70px minmax(0,1fr)}
+  .req .pill{grid-column:2;justify-self:start}
+  .hero{padding:18px}
+  .grid>aside{order:-1}
+  .evt td:first-child{min-width:0}
+}
+@media (prefers-reduced-motion:no-preference){dialog[open]{animation:pop .16s ease-out}}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><div><b>Cadeia de Custódia</b><span>Instituto de Criminalística</span></div></div>
+    <nav class="nav" id="nav" aria-label="Seções"></nav>
+    <div class="side-foot">
+      <div class="me" id="me"></div>
+      <label for="user">Usuário em uso (login simulado)</label>
+      <select id="user" data-req="RF01 RF16"></select>
+      <button class="reset" data-a="reset">Restaurar dados de exemplo</button>
+    </div>
+  </aside>
+  <div class="content">
+    <div class="proto" id="proto"></div>
+    <main id="main" tabindex="-1"><p>Carregando…</p></main>
+  </div>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Seções"></nav>
+<dialog id="dlg1"></dialog>
+<dialog id="dlg2"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ZERO='0'.repeat(64);
+const GEO='Localização não disponível nesta prévia';
+const KEY='custodia-mvp-v1';
+const TIPOS=['Arma de fogo','Projétil ou munição','Arma branca','Dispositivo eletrônico','Documento','Material biológico','Substância ou entorpecente','Vestígio papiloscópico','Outro'];
+const CRIMES=['Homicídio','Roubo','Furto','Tráfico de drogas','Lesão corporal','Crime cibernético','Outro'];
+const EMISSOR={instituto:'Instituto de Criminalística',ssp:'SSP',senasp:'SENASP/MJ',tribunal:'Tribunal de Justiça',pf:'Polícia Federal',fabricante:'Embalagem do fabricante',outro:'Outro'};
+const PERFIL={perito:'Perito',normal:'Normal',admin:'Administrador'};
+const PCOR={perito:'violet',normal:'slate',admin:'blue'};
+const STATUS={coletada:['Coletada','slate'],em_transito:['Em trânsito','amber'],recebida:['Recebida no setor','blue'],em_analise:['Em análise','violet'],analisada:['Analisada','green'],armazenada:['Armazenada','slate'],externo:['Em destino externo','blue'],devolvida:['Devolvida','slate']};
+const LST={disponivel:['Disponível','green'],vinculado:['Vinculado','blue'],rompido:['Rompido','red']};
+const ACAO={'Coletado':['box','blue'],'Lacre associado':['lock','green'],'Lacre rompido':['unlock','red'],'Encaminhado':['truck','amber'],'Recebido':['inbox','blue'],'Chegada confirmada em destino externo':['pin','blue'],'Em análise':['flask','violet'],'Analisado':['check','green'],'Armazenado':['archive','slate'],'Devolvido':['undo','slate']};
+const P={
+ box:'<path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+ lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+ unlock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 017.5-2"/>',
+ users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3.2 3.2 0 010 5.6M17.5 14.3c2 .8 3.5 2.9 3.5 5.7"/>',
+ list:'<path d="M10 6h10M10 12h10M10 18h10"/><path d="M4 6l1 1 1.6-2M4 12l1 1 1.6-2M4 18l1 1 1.6-2"/>',
+ shield:'<path d="M12 3l7 3v5.5c0 4.4-2.9 8-7 9.5-4.1-1.500-7-5.100-7-9.500V6z"/><path d="M9 12l2.200 2.200L15 10.500"/>',
+ alert:'<path d="M12 4l9 16H3z"/><path d="M12 10v4.500M12 17.200v.300"/>',
+ truck:'<path d="M3 6h11v10H3zM14 10h4l3 3v3h-7"/><circle cx="7.500" cy="17.500" r="1.800"/><circle cx="17.500" cy="17.500" r="1.800"/>',
+ inbox:'<path d="M4 13l2.500-8h11L20 13v6H4z"/><path d="M4 13h4.500l1 2.500h5l1-2.500H20"/>',
+ flask:'<path d="M9.500 3h5M10.500 3v6L5 18.500A1.500 1.500 0 006.300 21h11.400a1.500 1.500 0 001.300-2.500L13.500 9V3"/><path d="M7.500 15h9"/>',
+ check:'<circle cx="12" cy="12" r="9"/><path d="M8 12.200l2.700 2.700L16 9.500"/>',
+ archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/>',
+ undo:'<path d="M8 8l-4 4 4 4"/><path d="M4 12h10.500a4.500 4.500 0 010 9H11"/>',
+ pin:'<path d="M12 21s7-6.200 7-11.500A7 7 0 005 9.500C5 14.800 12 21 12 21z"/><circle cx="12" cy="9.500" r="2.500"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ search:'<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4.500 4.500"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ chev:'<path d="M9 6l6 6-6 6"/>',
+ link:'<path d="M10 14a4 4 0 005.700 0l3-3a4 4 0 00-5.700-5.700l-1 1"/><path d="M14 10a4 4 0 00-5.700 0l-3 3a4 4 0 005.700 5.700l1-1"/>',
+ file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>',
+ tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.500" cy="8.500" r="1.300"/>',
+ refresh:'<path d="M20 11a8 8 0 10-2.300 6.300"/><path d="M20 5v6h-6"/>',
+ edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.500M12 7.600v.300"/>',
+ building:'<path d="M4 21V5l8-2v18M12 9l8 2v10M3 21h18"/><path d="M7 8h2M7 12h2M7 16h2M15 14h2M15 17h2"/>'
+};
+const SHORT={
+ RF01:'Login com JWT (simulado aqui)',RF02:'Cadastro de evidência',RF02b:'Local do cadastro e justificativa','RF02b-oc':'Vincular ocorrência (pop-up)',
+ RF02c:'GIGANTE existente: junta à ocorrência',RF02d:'GIGANTE novo: cria a ocorrência',RF02e:'Sem ocorrência: pede confirmação',
+ RF03:'SHA-256 da foto no upload',RF04:'Gerar lote de lacres com QR',RF04b:'Lacre nasce disponível',RF04c:'QR contém só o número',
+ RF04e:'Referência a lacre externo',RF05:'Associar lacre já afixado',RF05b:'Vincula e guarda o hash',RF05c:'Recusa lacre usado ou rompido',
+ RF05d:'Lacre externo como principal',RF06:'Folha de etiquetas do lote',RF06b:'Estoque por status e emissor',RF07:'Romper lacre com motivo',
+ RF07b:'Sem lacre ativo: tudo bloqueado',RF07c:'Quem pode substituir o lacre',RF08:'Movimentação com responsável e hora',
+ RF08b:'Destino escolhido entre os setores',RF08c:'"Coletado" criado no cadastro',RF09:'Hash encadeado ao anterior',RF10:'Gerenciar setores',
+ RF11:'Usuário pertence a um setor',RF12:'Encaminhar: fica em trânsito',RF12b:'Pergunta de transporte no cadastro',
+ RF12c:'Em trânsito bloqueia movimentações',RF13:'Em trânsito sem responsável',RF13b:'Destino externo',RF13c:'Chegada ao destino externo',
+ RF13d:'Destino externo não inicia análise',RF13e:'Devolução encerra a posse',RF14:'Só o setor de destino recebe',RF15:'Outro setor é recusado',
+ RF15b:'Receber não é analisar',RF16:'Perfis: perito, normal, admin',RF17:'Só perito do setor assume',RF17b:'Quem não é perito é recusado',
+ RF18:'Assumir grava "Em análise"',RF19:'Só quem assumiu conclui',RF19b:'Concluir exige lacre ativo',RF20:'Cadeia em ordem, com hashes',
+ RF21:'Recalcular e comparar hashes',RF22:'Apontar registro divergente',RF23:'Exportar com a verificação',
+ RNF03:'Registros não podem ser alterados',RNF05:'Número do lacre gerado pelo sistema'};
+const rq=ids=>ids?` data-req="${ids}"`:'';
+const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${P[n]||''}</svg>`;
+let S, ui={sel:null,evf:'',q:'',fs:'',fe:'',lote:null,rf:'',rq:''}, draftOc=null;
+
+/* ---------- hash ---------- */
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+const sha=async s=>hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)));
+const payload=r=>JSON.stringify([r.seq,r.evidenciaId,r.acao,r.responsavel,r.setorId||'',r.destino||'',r.local||'',r.dataHora,r.observacao||'',r.geo||'']);
+const hashRec=r=>sha(r.hashAnterior+'|'+payload(r));
+
+/* ---------- estado ---------- */
+const me=()=>S.users.find(u=>u.id===S.me);
+const setor=id=>S.setores.find(s=>s.id===id);
+const sn=id=>setor(id)?.nome||'setor removido';
+const user=id=>S.users.find(u=>u.id===id);
+const evById=id=>S.evidencias.find(x=>x.id===id);
+const lacreAtivo=ev=>S.lacres.find(l=>l.evidenciaId===ev.id&&l.status==='vinculado');
+const bloqueada=ev=>ev.teveLacre&&!lacreAtivo(ev)&&ev.status!=='devolvida';
+const fmt=d=>new Date(d).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+const short=h=>h?h.slice(0,10)+'…'+h.slice(-8):'';
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}}
+function toast(t){const el=$('#toast');el.textContent=t;clearTimeout(toast.t);toast.t=setTimeout(()=>el.textContent='',4500)}
+
+async function mov(ev,acao,o={}){
+  const c=S.cadeia[ev.id]||(S.cadeia[ev.id]=[]);const u=o.user||me();
+  const r={seq:c.length+1,evidenciaId:ev.id,acao,responsavel:o.responsavel||u.nome,setorId:o.setorId||null,destino:o.destino||'',local:o.local||'',dataHora:o.at||new Date().toISOString(),observacao:o.obs||'',geo:GEO,hashAnterior:c.length?c[c.length-1].hashRegistro:ZERO};
+  r.hashRegistro=await hashRec(r);c.push(r);return r;
+}
+
+/* ---------- operações (regras de negócio) ---------- */
+async function opAssociar(ev,u,d,at){
+  let l;const num=(d.numero||'').trim();
+  if(!num)return 'Informe o número do lacre.';
+  if(d.externo){
+    if(S.lacres.some(x=>x.numero.toLowerCase()===num.toLowerCase()))return `O lacre ${num} já foi registrado em outra evidência e não pode ser reaproveitado.`;
+    l={id:'lc'+(++S.seq),numero:num,externo:true,emissor:d.emissor||'outro',loteId:null,status:'disponivel',refs:[],geradoEm:at||new Date().toISOString()};S.lacres.push(l);
+  }else{
+    l=S.lacres.find(x=>!x.externo&&x.numero.toLowerCase()===num.toLowerCase());
+    if(!l)return `Não existe lacre do Instituto com o número ${num}. Confira a etiqueta ou registre como lacre externo.`;
+    if(l.status==='vinculado')return `O lacre ${l.numero} já está vinculado à evidência ${evById(l.evidenciaId)?.codigo}. Um lacre não pode ser usado em duas evidências.`;
+    if(l.status==='rompido')return `O lacre ${l.numero} foi rompido e não pode ser reutilizado.`;
+  }
+  Object.assign(l,{status:'vinculado',evidenciaId:ev.id,hashNoMomento:ev.hashFoto,vinculadoPor:u.nome,vinculadoEm:at||new Date().toISOString()});
+  ev.teveLacre=true;ev.rompidoPorId=null;
+  await mov(ev,'Lacre associado',{user:u,at,setorId:ev.setorAtualId,obs:`Lacre ${l.numero} (${EMISSOR[l.emissor]})`});
+  return null;
+}
+async function opRomper(ev,u,motivo,at){
+  const l=lacreAtivo(ev);if(!l)return;
+  Object.assign(l,{status:'rompido',rompidoPor:u.nome,motivo,rompidoEm:at||new Date().toISOString()});ev.rompidoPorId=u.id;
+  await mov(ev,'Lacre rompido',{user:u,at,setorId:ev.setorAtualId,obs:`Lacre ${l.numero}. Motivo: ${motivo}`});
+}
+async function opEncaminhar(ev,u,d,at){
+  ev.status='em_transito';ev.setorAtualId=null;ev.aguardandoAnalise=false;
+  if(d.externo){ev.destinoExterno={nome:d.nome,endereco:d.endereco};ev.setorPendenteId=null}
+  else{ev.setorPendenteId=d.setorId;ev.destinoExterno=null}
+  await mov(ev,'Encaminhado',{user:u,at,responsavel:d.transportador||u.nome,destino:d.externo?`${d.nome} (externo), ${d.endereco}`:sn(d.setorId),obs:d.obs});
+}
+async function opReceber(ev,u,obs,at){
+  if(ev.destinoExterno){ev.status='externo';await mov(ev,'Chegada confirmada em destino externo',{user:u,at,local:`${ev.destinoExterno.nome}, ${ev.destinoExterno.endereco}`,obs})}
+  else{ev.status='recebida';ev.setorAtualId=ev.setorPendenteId;ev.setorPendenteId=null;ev.aguardandoAnalise=true;await mov(ev,'Recebido',{user:u,at,setorId:ev.setorAtualId,obs})}
+}
+async function opAssumir(ev,u,obs,at){ev.status='em_analise';ev.peritoId=u.id;ev.aguardandoAnalise=false;await mov(ev,'Em análise',{user:u,at,setorId:ev.setorAtualId,obs})}
+async function opConcluir(ev,u,obs,at){ev.status='analisada';ev.peritoId=null;await mov(ev,'Analisado',{user:u,at,setorId:ev.setorAtualId,obs})}
+async function opArmazenar(ev,u,sid,obs,at){ev.status='armazenada';ev.setorAtualId=sid;ev.destinoExterno=null;ev.aguardandoAnalise=false;await mov(ev,'Armazenado',{user:u,at,setorId:sid,obs})}
+async function opDevolver(ev,u,para,obs,at){ev.status='devolvida';ev.setorAtualId=null;ev.setorPendenteId=null;ev.aguardandoAnalise=false;await mov(ev,'Devolvido',{user:u,at,destino:para,obs})}
+function novoLote(u,qtd,at){
+  const id='L-'+String(S.lotes.length+1).padStart(3,'0');
+  S.lotes.push({id,qtd,por:u.nome,geradoEm:at||new Date().toISOString()});
+  for(let i=0;i<qtd;i++)S.lacres.push({id:'lc'+(++S.seq),numero:'IC-2026-'+String(++S.seqLacre).padStart(6,'0'),externo:false,emissor:'instituto',loteId:id,status:'disponivel',refs:[],geradoEm:at||new Date().toISOString()});
+  return id;
+}
+function vincularOcorrencia(d,u){
+  const vazio=!d||!Object.values(d).some(v=>String(v||'').trim());
+  if(vazio)return null;
+  const bos=(d.bos||'').split(/[,;\n]/).map(s=>s.trim()).filter(Boolean);
+  let oc=d.gigante&&S.ocorrencias.find(o=>o.gigante&&o.gigante.toLowerCase()===d.gigante.trim().toLowerCase());
+  if(oc){bos.forEach(b=>{if(!oc.bos.includes(b))oc.bos.push(b)});['oficio','delegacia','crime','endereco','obs'].forEach(k=>{if(!oc[k]&&d[k])oc[k]=d[k].trim()})}
+  else{oc={id:'oc'+(++S.seq),gigante:(d.gigante||'').trim(),oficio:d.oficio||'',delegacia:d.delegacia||'',crime:d.crime||'',endereco:d.endereco||'',obs:d.obs||'',bos,criadaPor:u.nome,criadaEm:new Date().toISOString()};S.ocorrencias.push(oc)}
+  return oc.id;
+}
+async function novaEvidencia(u,d,at){
+  const ev={id:'ev'+(++S.seq),codigo:d.codigo,tipo:d.tipo,descricao:d.descricao,endereco:d.endereco,ocorrenciaId:d.ocorrenciaId||null,fotoNome:d.fotoNome||'',hashFoto:d.hashFoto||'',coletadoPor:u.nome,coletadoEm:at||new Date().toISOString(),status:'coletada',setorAtualId:null,setorPendenteId:null,destinoExterno:null,aguardandoAnalise:false,peritoId:null,teveLacre:false,rompidoPorId:null};
+  S.evidencias.push(ev);
+  await mov(ev,'Coletado',{user:u,at,local:d.endereco,obs:[d.fora?`Cadastro feito fora do local indicado. Justificativa: ${d.justificativa}`:'Cadastro feito no local indicado.',d.hashFoto?`SHA-256 da foto: ${d.hashFoto}`:'Sem foto anexada.'].join(' ')});
+  return ev;
+}
+
+/* ---------- dados de exemplo ---------- */
+async function seed(){
+  S={seq:0,seqLacre:0,me:'u2',verif:{},cadeia:{},lotes:[],lacres:[],evidencias:[],ocorrencias:[],
+    setores:[{id:'s1',nome:'Recepção',ativo:true},{id:'s2',nome:'Laboratório de Balística',ativo:true},{id:'s3',nome:'Depósito',ativo:true},{id:'s4',nome:'Perícia Externa',ativo:true},{id:'s5',nome:'Laboratório de Química',ativo:false}],
+    users:[{id:'u1',nome:'Ana Ribeiro',matricula:'1001',papel:'admin',setorId:'s1'},{id:'u2',nome:'Rafael Souza',matricula:'2014',papel:'perito',setorId:'s4'},{id:'u3',nome:'Júlia Farias',matricula:'3120',papel:'normal',setorId:'s2'},{id:'u4',nome:'Carlos Menezes',matricula:'2031',papel:'perito',setorId:'s2'},{id:'u5',nome:'Bruno Teixeira',matricula:'2047',papel:'perito',setorId:'s2'},{id:'u6',nome:'Marta Lima',matricula:'3155',papel:'normal',setorId:'s3'}]};
+  const [ana,raf,jul,car]=[user('u1'),user('u2'),user('u3'),user('u4')];
+  const t=(d,h)=>`2026-11-${d}T${h}:00-04:00`;
+  novoLote(ana,12,t('09','10:00'));
+  const oc1=vincularOcorrencia({gigante:'GIG-2026-004417',oficio:'Of. 0457/2026',delegacia:'1º DIP',crime:'Homicídio',endereco:'Rua Tapajós, 214, Centro, Manaus',bos:'BO 2026/118.332'},raf);
+  const oc2=vincularOcorrencia({gigante:'GIG-2026-004502',delegacia:'6º DIP',crime:'Lesão corporal',bos:'BO 2026/119.870'},raf);
+  const e1=await novaEvidencia(raf,{codigo:'EV-2026-0001',tipo:TIPOS[1],descricao:'Projétil de arma de fogo deformado',endereco:'Rua Tapajós, 214, Centro, Manaus',ocorrenciaId:oc1,hashFoto:await sha('foto-exemplo-1'),fotoNome:'projetil.jpg'},t('10','21:40'));
+  await opAssociar(e1,raf,{numero:'IC-2026-000001'},t('10','21:42'));
+  await opEncaminhar(e1,raf,{setorId:'s2',obs:'Transporte em viatura do Instituto'},t('10','22:15'));
+  await opReceber(e1,jul,'Invólucro íntegro na chegada',t('11','07:50'));
+  await opAssumir(e1,car,'',t('11','09:10'));
+  await opRomper(e1,car,'Abertura para exame de microcomparação balística',t('11','09:12'));
+  await opAssociar(e1,car,{numero:'IC-2026-000002'},t('12','15:30'));
+  await opConcluir(e1,car,'Exame concluído, laudo em redação',t('12','15:35'));
+  await opArmazenar(e1,car,'s3','Prateleira B-14',t('12','16:20'));
+  const e2=await novaEvidencia(raf,{codigo:'EV-2026-0002',tipo:TIPOS[1],descricao:'Estojo deflagrado calibre 9 mm',endereco:'Rua Tapajós, 214, Centro, Manaus',ocorrenciaId:oc1,hashFoto:await sha('foto-exemplo-2'),fotoNome:'estojo.jpg'},t('14','18:05'));
+  await opAssociar(e2,raf,{numero:'IC-2026-000003'},t('14','18:07'));
+  await opEncaminhar(e2,raf,{setorId:'s2',obs:''},t('14','18:40'));
+  const e3=await novaEvidencia(raf,{codigo:'EV-2026-0003',tipo:TIPOS[2],descricao:'Faca com cabo de madeira, lâmina de 18 cm',endereco:'Av. Constantino Nery, 1500, Manaus',ocorrenciaId:oc2,fora:true,justificativa:'Local sem condições de segurança; cadastro feito na viatura.'},t('15','23:10'));
+  await opAssociar(e3,raf,{externo:true,emissor:'ssp',numero:'SSP-88231'},t('15','23:12'));
+  await opRomper(e3,raf,'Invólucro rasgou durante o transporte',t('15','23:55'));
+  const e4=await novaEvidencia(raf,{codigo:'EV-2026-0004',tipo:TIPOS[3],descricao:'Aparelho celular com tela trincada',endereco:'Av. Constantino Nery, 1500, Manaus',ocorrenciaId:oc2,hashFoto:await sha('foto-exemplo-4'),fotoNome:'celular.jpg'},t('15','23:20'));
+  await opAssociar(e4,raf,{numero:'IC-2026-000004'},t('15','23:22'));
+  await opEncaminhar(e4,raf,{setorId:'s2',obs:''},t('16','00:30'));
+  await opReceber(e4,jul,'',t('16','07:45'));
+  await opAssumir(e4,user('u5'),'Extração de dados',t('16','08:20'));
+}
+
+/* ---------- componentes ---------- */
+const AVC=['#3B5B8C','#7A4FBF','#0A7A55','#B4532A','#2F6F8F','#9B2C5A'];
+const ini=n=>n.split(' ').map(x=>x[0]).slice(0,2).join('');
+const av=(u,sm)=>`<span class="av ${sm?'sm':''}" style="--avc:${AVC[(+u.id.slice(1)||0)%AVC.length]}" aria-hidden="true">${e(ini(u.nome))}</span>`;
+const pillS=(t,c,x='')=>`<span class="pill c-${c} ${x}">${t}</span>`;
+const STREQ={em_transito:'RF12c RF13',em_analise:'RF18',analisada:'RF19',externo:'RF13c RF13d',devolvida:'RF13e',recebida:'RF14 RF15b',coletada:'RF08c',armazenada:'RF08b'};
+const pill=ev=>bloqueada(ev)?'<span class="pill solid" data-req="RF07b">Sem lacre ativo</span>':`<span class="pill c-${STATUS[ev.status][1]}"${rq(STREQ[ev.status])}>${STATUS[ev.status][0]}</span>`;
+const ph=(t,sub,act='')=>`<header class="ph"><div><h1>${t}</h1><p>${sub}</p></div><div>${act}</div></header>`;
+const stat=(key,grp,val,n,label,icon,c,req)=>`<button class="stat c-${c}"${rq(req)} data-a="filtro" data-g="${grp}" data-v="${key}" aria-pressed="${val===key}"><span class="tile">${ic(icon)}</span><span><b>${n}</b><span>${label}</span></span></button>`;
+function onde(ev){
+  if(ev.status==='devolvida')return 'Fora da posse do Instituto';
+  if(ev.status==='em_transito')return 'A caminho de '+(ev.destinoExterno?ev.destinoExterno.nome+' (externo)':sn(ev.setorPendenteId));
+  if(ev.status==='externo')return ev.destinoExterno.nome+' (externo)';
+  if(ev.status==='em_analise')return `${sn(ev.setorAtualId)}, com ${user(ev.peritoId)?.nome}`;
+  if(ev.setorAtualId)return sn(ev.setorAtualId);
+  return 'Com '+ev.coletadoPor;
+}
+function qr(num){try{const q=qrcode(0,'M');q.addData(num);q.make();return q.createSvgTag({cellSize:2,margin:0,scalable:true})}catch(_){return ''}}
+function etiqueta(l,comQr){return `<div class="seal ${l.status==='rompido'?'broken':''}"><i></i><div><span>${e(EMISSOR[l.emissor])}</span><b>${e(l.numero)}</b><span>${l.status==='rompido'?'Rompido':l.externo?'Lacre externo':'Lacre de evidência'}</span></div>${comQr&&!l.externo?qr(l.numero):''}</div>`}
+
+/* ---------- visões ---------- */
+const EVF={'':()=>true,em_transito:ev=>ev.status==='em_transito',em_analise:ev=>ev.status==='em_analise',bloq:bloqueada};
+function evRows(){
+  const q=ui.q.trim().toLowerCase();
+  const list=[...S.evidencias].reverse().filter(EVF[ui.evf]).filter(ev=>!q||(ev.codigo+' '+ev.descricao+' '+ev.tipo).toLowerCase().includes(q));
+  if(!list.length)return `<tr><td colspan="6" class="empty">${S.evidencias.length?'Nenhuma evidência com esse filtro.':'Nenhuma evidência ainda. Use "Registrar evidência" para criar a primeira.'}</td></tr>`;
+  return list.map(ev=>{const c=S.cadeia[ev.id],u=c[c.length-1],l=lacreAtivo(ev),b=bloqueada(ev);
+    return `<tr class="go ${b?'alert':''}" data-a="abrir" data-id="${ev.id}" tabindex="0">
+    <td><div class="cell"><span class="tile c-${b?'red':'blue'}">${ic(b?'alert':'box')}</span><div><span class="chip">${e(ev.codigo)}</span><strong>${e(ev.descricao)}</strong></div></div></td>
+    <td data-l="Tipo">${e(ev.tipo)}</td><td>${pill(ev)}</td><td data-l="Onde está">${e(onde(ev))}</td>
+    <td data-l="Lacre">${l?`<span class="mono">${e(l.numero)}</span>`:`<span class="${b?'':'muted'}" ${b?'style="color:var(--red);font-weight:600"':''}>${b?'Rompido':'Sem lacre'}</span>`}</td>
+    <td data-l="Última movimentação"><span class="small">${e(u.acao)}<br><span class="muted">${fmt(u.dataHora)}</span></span></td></tr>`}).join('');
+}
+function reqList(){
+  const q=ui.rq.trim().toLowerCase(),ok=r=>(!ui.rf||r[1]===ui.rf)&&(!q||(r[0]+' '+r[2]+' '+(r[3]||'')).toLowerCase().includes(q));
+  const tag={ok:pillS('No protótipo','green'),sim:pillS('Simulado','amber'),real:pillS('Só no sistema real','slate')};
+  const rows=a=>a.map(r=>`<div class="req"><span class="chip">${r[0]}</span><span>${r[2]}</span>${tag[r[1]]}${r[3]?`<span class="note">${ic('alert')}<span>${r[3]}</span></span>`:''}</div>`).join('');
+  const bloco=(t,a)=>{const f=a.filter(ok);return f.length?`<section class="card" style="margin-bottom:16px"><div class="card-h"><h2>${t}</h2><span class="muted small">${f.length} ${f.length===1?'requisito':'requisitos'}</span></div>${rows(f)}</section>`:''};
+  const rf=RF.map(g=>bloco(g[0],g[1])).join(''),rn=bloco('Do documento',RNF)+bloco('Sugeridos, não constam no documento',SUG);
+  if(!rf&&!rn)return '<div class="card empty">Nenhum requisito com esse filtro.</div>';
+  return (rf?`<div class="sec"><h2>Requisitos funcionais</h2></div>${rf}`:'')+(rn?`<div class="sec"><h2>Requisitos não funcionais</h2></div>${rn}`:'');
+}
+
+const views={
+evidencias(){
+  if(ui.sel&&evById(ui.sel))return detalhe(evById(ui.sel));
+  const n=k=>S.evidencias.filter(EVF[k]).length;
+  return ph('Evidências','O que está sob custódia do Instituto, em que situação e com quem.',`<button class="btn pri" data-a="nova" data-req="RF02 RF03 RF08c">${ic('plus')}Registrar evidência</button>`)+
+  `<div class="stats">${stat('','evf',ui.evf,n(''),'Todas as evidências','box','blue')}${stat('em_transito','evf',ui.evf,n('em_transito'),'Em trânsito','truck','amber','RF12c RF13')}${stat('em_analise','evf',ui.evf,n('em_analise'),'Em análise','flask','violet','RF18')}${stat('bloq','evf',ui.evf,n('bloq'),'Sem lacre ativo','alert','red','RF07b')}</div>
+  <div class="card"><div class="tools"><div class="search">${ic('search')}<input type="search" data-q="q" value="${e(ui.q)}" placeholder="Buscar por código, descrição ou tipo" aria-label="Buscar evidência"></div></div>
+  <div class="tw"><table class="evt"><thead><tr><th>Evidência</th><th>Tipo</th><th>Situação</th><th>Onde está</th><th>Lacre</th><th>Última movimentação</th></tr></thead><tbody id="evrows">${evRows()}</tbody></table></div></div>`;
+},
+lacres(){
+  const c=s=>S.lacres.filter(l=>l.status===s).length,adm=me().papel==='admin';
+  if(ui.lote){const ls=S.lacres.filter(l=>l.loteId===ui.lote&&l.status==='disponivel');
+    return `<div class="crumb"><button data-a="lote" data-id="">Lacres</button>${ic('chev')}<span>Lote ${e(ui.lote)}</span></div>`+
+    ph(`Etiquetas do lote ${e(ui.lote)}`,`${ls.length} etiquetas disponíveis para corte e afixação. A impressão está desligada nesta prévia; no sistema real esta folha vai para a impressora.`)+
+    `<div class="card card-b">${ls.length?`<div class="labels" data-req="RF06 RF04c">${ls.map(l=>etiqueta(l,true)).join('')}</div>`:'<p class="empty">Todas as etiquetas deste lote já foram usadas.</p>'}</div>`}
+  const list=S.lacres.filter(l=>(!ui.fs||l.status===ui.fs)&&(!ui.fe||l.emissor===ui.fe));
+  return ph('Lacres','Estoque de lacres do Instituto e lacres externos registrados. O QR code carrega só o número do lacre.',
+    `<span style="display:inline-block" data-req="RF04 RF04b RNF05"><button class="btn pri" data-a="gerar" ${adm?'':'disabled'}>${ic('plus')}Gerar lote</button></span>`)+
+  `<div class="stats">${stat('','fs',ui.fs,S.lacres.length,'Todos os lacres','tag','blue','RF06b')}${stat('disponivel','fs',ui.fs,c('disponivel'),'Disponíveis','check','green','RF06b')}${stat('vinculado','fs',ui.fs,c('vinculado'),'Vinculados','lock','blue','RF06b')}${stat('rompido','fs',ui.fs,c('rompido'),'Rompidos','unlock','red','RF06b')}</div>
+  <div class="lots">${S.lotes.map(l=>{const ls=S.lacres.filter(x=>x.loteId===l.id),d=ls.filter(x=>x.status==='disponivel').length;return `<div class="card lot"><div class="cell"><span class="tile c-slate">${ic('tag')}</span><div><strong>Lote ${l.id}</strong><span class="small muted">${e(l.por)}, ${fmt(l.geradoEm)}</span></div></div>
+    <div class="bar"><i style="width:${Math.round(d/ls.length*100)}%"></i></div><div class="small muted" style="display:flex;justify-content:space-between;align-items:center"><span>${d} de ${ls.length} disponíveis</span><button class="btn ghost" data-a="lote" data-id="${l.id}" data-req="RF06 RF04c">Ver etiquetas</button></div></div>`}).join('')}</div>
+  <div class="card"><div class="tools"><h2 style="flex:1">Estoque</h2><label class="small muted" for="fe">Emissor</label><select id="fe" data-c="fe" data-req="RF06b"><option value="">Todos</option>${Object.entries(EMISSOR).map(([k,v])=>`<option value="${k}" ${ui.fe===k?'selected':''}>${v}</option>`).join('')}</select></div>
+  <div class="tw"><table><thead><tr><th>Número</th><th>Emissor</th><th>Status</th><th>Evidência</th><th>Detalhe</th><th></th></tr></thead><tbody>
+  ${list.slice(0,150).map(l=>{const ev=evById(l.evidenciaId);return `<tr><td><span class="chip">${e(l.numero)}</span></td><td>${e(EMISSOR[l.emissor])}${l.loteId?`<br><span class="muted small">Lote ${l.loteId}</span>`:''}</td>
+    <td>${pillS(...LST[l.status])}</td><td>${ev?`<button class="btn ghost mono" data-a="abrir" data-id="${ev.id}">${e(ev.codigo)}</button>`:'<span class="muted">Nenhuma</span>'}</td>
+    <td class="small">${l.status==='rompido'?`${e(l.rompidoPor)}, ${fmt(l.rompidoEm)}<br><span class="muted">${e(l.motivo)}</span>`:l.status==='vinculado'?`${e(l.vinculadoPor)}, ${fmt(l.vinculadoEm)}`:'<span class="muted">Aguardando uso</span>'}</td>
+    <td>${l.status==='vinculado'?`<button class="btn danger" data-a="romper" data-id="${ev.id}" data-req="RF07 RF07b">Romper</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="6" class="empty">Nenhum lacre com esse filtro.</td></tr>'}
+  </tbody></table></div>${list.length>150?`<div class="tl-foot">Mostrando 150 de ${list.length}. Use os filtros para refinar.</div>`:''}</div>`;
+},
+setores(){
+  const adm=me().papel==='admin';
+  return ph('Setores e usuários','O setor de cada pessoa decide quem pode confirmar o recebimento de uma evidência. O perfil decide quem pode analisar.',
+    `<span style="display:inline-block" data-req="RF10"><button class="btn pri" data-a="setor" data-id="" ${adm?'':'disabled'}>${ic('plus')}Novo setor</button></span>`)+
+  (adm?'':`<div class="banner c-blue">${ic('info')}<div>Só administradores criam e editam setores. Troque para Ana Ribeiro no seletor de usuário para testar.</div></div>`)+
+  `<div class="sectors">${S.setores.map(s=>{const us=S.users.filter(u=>u.setorId===s.id),n=S.evidencias.filter(x=>x.setorAtualId===s.id).length;return `<section class="card"><div class="card-h"><div class="cell"><span class="tile c-${s.ativo?'blue':'slate'}">${ic('building')}</span><div><strong>${e(s.nome)}</strong><span class="small muted">${n} ${n===1?'evidência':'evidências'} no setor</span></div></div>
+    <div class="cell" style="gap:6px">${pillS(s.ativo?'Ativo':'Inativo',s.ativo?'green':'slate')}${adm?`<button class="x" data-a="setor" data-id="${s.id}" data-req="RF10" aria-label="Editar ${e(s.nome)}">${ic('edit')}</button>`:''}</div></div>
+    ${us.length?`<ul class="people" data-req="RF11">${us.map(u=>`<li>${av(u,1)}<div><b>${e(u.nome)}</b><small>Matrícula ${e(u.matricula)}</small></div><span data-req="RF16" style="margin-left:auto">${pillS(PERFIL[u.papel],PCOR[u.papel])}</span></li>`).join('')}</ul>`:'<p class="card-b muted small">Nenhuma pessoa neste setor.</p>'}</section>`}).join('')}</div>`;
+},
+requisitos(){
+  const all=[...RF.flatMap(g=>g[1]),...RNF,...SUG],n=k=>all.filter(r=>!k||r[1]===k).length,nf=RF.reduce((a,g)=>a+g[1].length,0);
+  return ph('Requisitos do sistema',`${nf} requisitos funcionais e ${RNF.length} não funcionais levantados do documento do Desafio 4, mais ${SUG.length} não funcionais sugeridos.`)+
+  `<div class="stats">${stat('','rf',ui.rf,n(''),'Todos os requisitos','list','blue')}${stat('ok','rf',ui.rf,n('ok'),'Funcionam no protótipo','check','green')}${stat('sim','rf',ui.rf,n('sim'),'Simulados no navegador','info','amber')}${stat('real','rf',ui.rf,n('real'),'Só no sistema real','building','slate')}</div>
+  <div class="sec" style="margin-top:8px"><h2>Pontos do documento que se contradizem</h2><span class="muted small">Vale decidir cada um antes de implementar.</span></div>
+  <div class="issues">${INC.map(i=>`<div class="card issue"><span class="tile c-red">${ic('alert')}</span><div><strong>${i[0]}</strong><p>${i[1]}</p><p class="fix"><b>Proposta:</b> ${i[2]}</p></div></div>`).join('')}</div>
+  <div class="card" style="margin-top:28px"><div class="tools" style="border:0"><div class="search">${ic('search')}<input type="search" data-q="rq" value="${e(ui.rq)}" placeholder="Buscar por ID ou texto, por exemplo RF07 ou lacre" aria-label="Buscar requisito"></div><span class="small muted">Os painéis acima filtram por situação no protótipo.</span></div></div>
+  <div id="reqlist">${reqList()}</div>`;
+}};
+
+const ACTREQ={lacre:'RF05 RF05b RF05c',receber:'RF14 RF15 RF15b',assumir:'RF17 RF17b RF18',concluir:'RF19 RF19b',encaminhar:'RF12 RF13 RF13b',armazenar:'RF08b',devolver:'RF13e',romper:'RF07 RF07b'};
+function acoes(ev){
+  const u=me(),a=[],add=(id,label,icon,why,pri)=>a.push({id,label,icon,why,pri});
+  if(ev.status==='devolvida')return a;
+  if(bloqueada(ev)){
+    const pode=ev.setorAtualId?u.setorId===ev.setorAtualId:u.id===ev.rompidoPorId;
+    add('lacre','Associar novo lacre','lock',pode?'':ev.setorAtualId?`A evidência está no setor ${sn(ev.setorAtualId)}. Só pessoas desse setor podem substituir o lacre.`:`O lacre foi rompido antes de a evidência chegar a um setor. Só ${user(ev.rompidoPorId)?.nome}, que registrou o rompimento, pode substituí-lo.`,true);
+    return a;
+  }
+  if(ev.status==='em_transito'){
+    if(ev.destinoExterno)add('receber','Confirmar chegada ao destino externo','pin','',true);
+    else add('receber','Confirmar recebimento','inbox',u.setorId===ev.setorPendenteId?'':`Esta evidência foi encaminhada ao setor ${sn(ev.setorPendenteId)}. Você pertence ao setor ${sn(u.setorId)} e não pode confirmar o recebimento.`,true);
+  }else if(ev.status==='em_analise'){
+    add('concluir','Concluir análise','check',u.id===ev.peritoId?'':`Só ${user(ev.peritoId)?.nome}, que assumiu a análise, pode concluí-la.`,true);
+  }else{
+    if(ev.setorAtualId&&ev.aguardandoAnalise)add('assumir','Assumir análise','flask',u.papel!=='perito'?`Seu perfil é ${PERFIL[u.papel]}. Só peritos assumem análise.`:u.setorId!==ev.setorAtualId?`A evidência está no setor ${sn(ev.setorAtualId)}. Só peritos desse setor podem assumir a análise.`:'',true);
+    add('encaminhar','Encaminhar','truck');add('armazenar','Armazenar','archive');add('devolver','Registrar devolução','undo');
+    if(!ev.teveLacre)add('lacre','Associar lacre','lock');
+  }
+  if(lacreAtivo(ev))add('romper','Registrar rompimento do lacre','unlock');
+  return a;
+}
+function passos(ev){
+  const st=['Coletada','Em trânsito','Recebida','Em análise','Analisada','Armazenada'],ix={coletada:0,em_transito:1,recebida:2,externo:2,em_analise:3,analisada:4,armazenada:5,devolvida:6}[ev.status];
+  if(ev.status==='externo')st[2]='No destino externo';
+  if(ev.status==='devolvida')st.push('Devolvida');
+  return `<ol class="steps" aria-label="Etapa atual">${st.map((s,i)=>`<li class="${i<ix?'done':i===ix?'now':''}" ${i===ix?'aria-current="step"':''}>${s}</li>`).join('')}</ol>`;
+}
+function detalhe(ev){
+  const c=S.cadeia[ev.id]||[],v=S.verif[ev.id],l=lacreAtivo(ev),oc=S.ocorrencias.find(o=>o.id===ev.ocorrenciaId),hist=S.lacres.filter(x=>x.evidenciaId===ev.id&&x.status==='rompido'),bl=bloqueada(ev),ac=acoes(ev),u=me();
+  const falhas=v?c.filter(r=>v.itens[r.seq]&&!v.itens[r.seq].ok):[];
+  const integ=!v?`<div class="integ c-slate" data-req="RF21">${ic('info')}<div><b>Ainda não verificada</b><span class="small">A verificação recalcula o SHA-256 de cada registro e compara com o valor guardado.</span></div></div>`
+    :falhas.length?`<div class="banner tape" style="margin:18px 20px 0" data-req="RF22">${ic('alert')}<div><b>Cadeia adulterada</b>${falhas.length===1?'O registro '+falhas[0].seq+' não confere':'Os registros '+falhas.map(r=>r.seq).join(', ')+' não conferem'} com o hash guardado. Verificado em ${fmt(v.em)}.</div></div>`
+    :`<div class="integ c-green" data-req="RF21">${ic('shield')}<div><b>Cadeia íntegra</b><span class="small">Os ${Object.keys(v.itens).length} registros conferem com os hashes guardados. Verificado em ${fmt(v.em)}.</span></div></div>`;
+  return `<div class="crumb"><button data-a="abrir" data-id="">Evidências</button>${ic('chev')}<span>${e(ev.codigo)}</span></div>
+  ${bl?`<div class="banner tape" data-req="RF07b RF19b">${ic('alert')}<div><b>Sem lacre ativo</b>Todas as movimentações estão bloqueadas até um novo lacre ser associado.${ev.status==='em_analise'?' Para concluir a análise, associe antes o novo lacre.':''}</div>${ac[0]&&!ac[0].why?`<button class="btn" data-a="lacre" data-id="${ev.id}" data-req="RF05 RF07c">${ic('lock')}Associar novo lacre</button>`:''}</div>`:''}
+  <section class="card hero"><div class="hero-top"><div><span class="chip">${e(ev.codigo)}</span><h1>${e(ev.descricao)}</h1></div>${pill(ev)}</div>
+    <dl class="kv"><div><dt>Tipo</dt><dd>${e(ev.tipo)}</dd></div><div><dt>Onde está</dt><dd>${e(onde(ev))}</dd></div><div><dt>Encontrada em</dt><dd>${e(ev.endereco)}</dd></div><div><dt>Coleta</dt><dd>${e(ev.coletadoPor)}, ${fmt(ev.coletadoEm)}</dd></div></dl>
+    ${passos(ev)}</section>
+  <div class="grid"><section class="card"><div class="card-h"><div><h2>Cadeia de custódia</h2><span class="small muted">${c.length} registros encadeados por hash SHA-256</span></div>
+      <div class="cell" style="gap:8px"><button class="btn" data-a="relatorio" data-req="RF23">${ic('file')}Relatório</button><button class="btn pri" data-a="verificar" data-req="RF21 RF22">${ic('shield')}Verificar integridade</button></div></div>
+    ${integ}
+    <ol class="tl">${c.map(r=>{const k=v&&v.itens[r.seq],m=ACAO[r.acao]||['box','slate'];return `<li class="${k&&!k.ok?'bad':''}"><span class="node c-${m[1]}">${ic(m[0])}</span><div class="rec">
+      <div class="rec-h"><h4>${r.seq}. ${e(r.acao)}${r.destino?' para '+e(r.destino):''}</h4><span class="cell" style="gap:8px">${k?`<span class="vf c-${k.ok?'green':'red'}">${k.ok?'Confere':'Divergente'}</span>`:''}<time>${fmt(r.dataHora)}</time></span></div>
+      <div class="who">${e(r.responsavel)}${r.setorId?', '+e(sn(r.setorId)):''}${r.local?', '+e(r.local):''}</div>
+      ${r.observacao?`<p class="obs">${e(r.observacao)}</p>`:''}
+      <div class="hash" data-req="RF09 RF20"><span>Hash anterior</span><code title="${r.hashAnterior}">${short(r.hashAnterior)}</code>${ic('link')}<span>Hash do registro</span><code title="${r.hashRegistro}">${short(r.hashRegistro)}</code></div>
+      ${k&&!k.ok?`<div class="badmsg">${k.elo?'O conteúdo deste registro foi alterado depois de criado. O hash recalculado é <span class="mono">'+short(k.calc)+'</span>, diferente do guardado.':'O elo com o registro anterior foi quebrado: o hash anterior guardado aqui não é o do registro '+(r.seq-1)+'.'}</div>`:''}
+    </div></li>`}).join('')}</ol>
+    <div class="tl-foot"><span>Registros não podem ser editados nem apagados pelo sistema. ${e(GEO)}.</span><button class="btn ghost" data-a="adulterar" data-req="RF22 RNF03">Simular adulteração no banco</button></div></section>
+  <aside class="stack">
+    <section class="card"><div class="card-h"><h2>Ações disponíveis</h2></div><div class="card-b">
+      <div class="cell" style="margin-bottom:14px">${av(u,1)}<span class="small"><b style="color:var(--ink)">${e(u.nome)}</b><br><span class="muted">${PERFIL[u.papel]}, ${e(sn(u.setorId))}</span></span></div>
+      ${ac.length?ac.map(x=>`<div class="act"${rq(x.id==='lacre'&&bl?'RF05 RF07c RF19b':x.id==='receber'&&ev.destinoExterno?'RF13c RF13d':ACTREQ[x.id])}><button class="btn block ${x.pri?'pri':''} ${x.id==='romper'?'danger':''}" data-a="${x.id}" data-id="${ev.id}" ${x.why?'disabled':''}>${ic(x.icon)}${x.label}</button>${x.why?`<p class="why">${ic('lock')}<span>${e(x.why)}</span></p>`:''}</div>`).join(''):'<p class="muted">A evidência foi devolvida. A cadeia está encerrada.</p>'}
+      <p class="hint" style="margin-top:12px">Troque o usuário no menu para testar as regras de setor e perfil.</p></div></section>
+    <section class="card"><div class="card-h"><h2>Lacre</h2>${l?pillS('Ativo','green'):bl?pillS('Rompido','red'):pillS('Sem lacre','slate')}</div><div class="card-b">
+      ${l?etiqueta(l,true)+`<p class="small muted" style="margin-top:10px">Vinculado por ${e(l.vinculadoPor)} em ${fmt(l.vinculadoEm)}.</p>
+        ${l.refs.length?'<p class="small" style="margin-top:10px"><b>Lacres externos presentes na evidência</b></p><ul class="small" style="margin:4px 0 0;padding-left:18px">'+l.refs.map(r=>`<li>${e(EMISSOR[r.emissor])}, nº ${e(r.numero)}${r.obs?': '+e(r.obs):''}</li>`).join('')+'</ul>':''}
+        ${l.externo?'':`<button class="btn ghost small" style="margin:8px 0 0 -8px" data-a="ref" data-id="${l.id}" data-req="RF04e">${ic('plus')}Referência de lacre externo</button>`}`:`<p class="muted">${bl?'O último lacre foi rompido e ainda não há substituto.':'Nenhum lacre foi associado a esta evidência.'}</p>`}
+      ${hist.length?`<details><summary>Histórico de lacres rompidos (${hist.length})</summary>${hist.map(x=>`<div style="margin-top:10px">${etiqueta(x)}<p class="small muted" style="margin-top:6px">${e(x.rompidoPor)}, ${fmt(x.rompidoEm)}. ${e(x.motivo)}</p></div>`).join('')}</details>`:''}</div></section>
+    <section class="card"><div class="card-h"><h2>Ocorrência e arquivo</h2></div><div class="card-b"><dl class="dl">
+      ${oc?`<div><dt>Código GIGANTE</dt><dd>${e(oc.gigante)||'Não informado'}</dd></div>${oc.bos.length?`<div><dt>B.O.(s)</dt><dd>${e(oc.bos.join(', '))}</dd></div>`:''}${oc.delegacia?`<div><dt>Delegacia de origem</dt><dd>${e(oc.delegacia)}</dd></div>`:''}${oc.crime?`<div><dt>Tipo de crime</dt><dd>${e(oc.crime)}</dd></div>`:''}${oc.oficio?`<div><dt>Nº de ofício</dt><dd>${e(oc.oficio)}</dd></div>`:''}`:'<div><dt>Ocorrência</dt><dd>Nenhuma vinculada</dd></div>'}
+      <div><dt>Foto</dt><dd>${ev.hashFoto?`${e(ev.fotoNome)}<br><span class="mono small muted" style="font-weight:400">SHA-256 ${e(ev.hashFoto)}</span>`:'Sem foto anexada'}</dd></div></dl></div></section>
+  </aside></div>`;
+}
+
+/* ---------- requisitos (conteúdo) ---------- */
+const RF=[
+['Autenticação, perfis e setores',[
+ ['RF01','sim','Login com autenticação JWT.','Aqui o login é a troca de usuário no menu, sem senha nem token.'],
+ ['RF16','ok','Três perfis de acesso: Perito (assume e conclui análises), Normal (recebe e transporta, não analisa) e Administrador (setores, tipos e lotes de lacre).','A tabela de escopo cita só dois perfis, e "gerenciar tipos" contradiz a lista fixa de tipos.'],
+ ['RF10','ok','Administradores cadastram, editam, ativam, desativam e removem setores em um modal.'],
+ ['RF11','ok','Todo usuário pertence a um setor do Instituto.']]],
+['Evidências e ocorrências',[
+ ['RF02','ok','Cadastro de evidência com código, tipo, descrição, endereço onde foi encontrada e foto.'],
+ ['RF02b','sim','Perguntar se o cadastro é feito fora do local indicado, capturar a localização do dispositivo e, se for fora, exigir justificativa gravada na movimentação "Coletado".','ID duplicado no documento (primeira ocorrência). O GPS não é lido nesta prévia.'],
+ ['RF02b','ok','Vínculo com ocorrência por pop-up próprio: nº de ofício, delegacia, tipo de crime, código GIGANTE, B.O.(s), endereço e observações, todos opcionais.','ID duplicado no documento (segunda ocorrência).'],
+ ['RF02c','ok','Código GIGANTE já existente: vincular a evidência à ocorrência e acrescentar B.O.s e dados novos.'],
+ ['RF02d','ok','Código GIGANTE novo: criar a ocorrência sem pedir confirmação.'],
+ ['RF02e','ok','Sem nenhum dado de ocorrência: pedir confirmação antes de salvar.'],
+ ['RF03','sim','Calcular e guardar o SHA-256 da foto no upload.','O hash é real, mas calculado no navegador; o RNF04 exige cálculo no backend.']]],
+['Lacres',[
+ ['RF04','ok','Administradores geram lotes de lacres pré-numerados (10, 50, 100) com QR code, antes de existir qualquer evidência.'],
+ ['RF04b','ok','Lacre novo nasce "Disponível" e sem evidência.'],
+ ['RF04c','ok','O QR code codifica só o número do lacre.'],
+ ['RF04d','ok','Lotes gerados são sempre do próprio Instituto.'],
+ ['RF04e','ok','Linkar ao lacre do Instituto referências de lacres externos já presentes na evidência, como registro histórico.'],
+ ['RF05','sim','Associar no cadastro um lacre físico já afixado, por leitura do QR pela câmera ou digitando o número.','Só a digitação funciona aqui; a câmera é bloqueada nesta prévia.'],
+ ['RF05b','ok','Ao associar: vincular lacre e evidência, guardar o hash da evidência naquele momento e marcar "Vinculado".'],
+ ['RF05c','ok','Recusar, com mensagem clara, lacre já vinculado a outra evidência ou rompido.'],
+ ['RF05d','ok','Aceitar como lacre da evidência um lacre externo (fabricante, SENASP/MJ, SSP), informando tipo e número, com as mesmas regras de bloqueio e substituição.','Conflita com o RNF05, que proíbe informar número manualmente.'],
+ ['RF05e','ok','Número de lacre externo não pode se repetir em outra evidência, atual ou histórica.'],
+ ['RF06','sim','Imprimir a folha de etiquetas disponíveis de um lote, pronta para corte.','A folha aparece na tela; a impressão é bloqueada nesta prévia.'],
+ ['RF06b','ok','Consultar o estoque de lacres por status e por emissor.'],
+ ['RF07','ok','Registrar rompimento de lacre com responsável e motivo, numa movimentação ou direto na tela do lacre.'],
+ ['RF07b','ok','Evidência com lacre rompido e sem substituto bloqueia qualquer movimentação e ganha destaque máximo na lista e na cadeia.'],
+ ['RF07c','ok','Substituição do lacre: qualquer pessoa do setor, se a evidência já foi recebida; antes disso, só quem registrou o rompimento.']]],
+['Movimentações e encaminhamento',[
+ ['RF08','ok','Registrar movimentação com ação, responsável, data e hora e observação.'],
+ ['RF08b','ok','"Encaminhar a setor" e "Armazenado" pedem um setor do cadastro; "Analisado" não é selecionável à mão.'],
+ ['RF08c','ok','"Coletado" é criado automaticamente no cadastro da evidência, com o endereço informado.','O trecho sobre "Transferido" ficou obsoleto com o RF13g.'],
+ ['RF09','sim','Hash de cada movimentação calculado a partir do hash anterior e dos dados do registro.','Encadeamento real, feito no navegador.'],
+ ['RF12','ok','Encaminhar a um setor de destino, gravando a movimentação e marcando a evidência "em trânsito".'],
+ ['RF12b','ok','Logo após o cadastro, perguntar se a evidência está em transporte; se sim, colher transportador e setor e já registrar o encaminhamento.'],
+ ['RF12c','ok','"Em trânsito" bloqueia novas movimentações até o recebimento e tem aparência própria.','A comparação com "Transferido" perdeu sentido após o RF13g.'],
+ ['RF13','ok','Em trânsito, a evidência não tem responsável individual, só setor de destino.'],
+ ['RF13b','ok','Encaminhar ou devolver a um destino externo, com nome e endereço.'],
+ ['RF13c','sim','Chegada a destino externo confirmada por qualquer usuário, com a localização do dispositivo; sem localização, segue e registra a ausência.','Sempre registra a ausência de localização nesta prévia.'],
+ ['RF13d','ok','Chegada a destino externo não inicia o ciclo de análise.'],
+ ['RF13e','ok','"Devolvido" pode ser registrado a qualquer momento e encerra a posse do Instituto.'],
+ ['RF13f','sim','Recebimento, início e conclusão de análise e movimentação manual gravam a localização do dispositivo no registro.','Conflita com a arquitetura, que diz não haver requisito de geolocalização.'],
+ ['RF13g','ok','A ação "Transferido" foi removida; "Encaminhar" e "Devolvido" cobrem a passagem de posse.'],
+ ['RF14','ok','Confirmar recebimento só para quem pertence ao setor de destino.'],
+ ['RF15','ok','Recusar, com mensagem clara, a confirmação por usuário de outro setor.'],
+ ['RF15b','ok','Receber não é analisar: qualquer pessoa do setor recebe, e a análise é registrada à parte.']]],
+['Análise',[
+ ['RF17','ok','Após o recebimento, "assumir análise" só para Perito do mesmo setor da evidência.'],
+ ['RF17b','ok','Recusar, com mensagem clara, quem não é Perito, mesmo no setor certo.'],
+ ['RF18','ok','Assumir análise grava o status "Em análise", não "Analisado".','O enum de ações do banco não prevê "em análise".'],
+ ['RF19','ok','"Concluir análise" grava "Analisado" e só vale para o perito que a assumiu.'],
+ ['RF19b','ok','Sem lacre ativo ao concluir, exigir novo lacre antes de prosseguir.']]],
+['Integridade, relatório e API',[
+ ['RF20','ok','Exibir a cadeia completa em ordem cronológica, com o hash de cada movimentação.'],
+ ['RF21','ok','Recalcular e comparar, sob demanda, o hash de cada movimentação.'],
+ ['RF22','ok','Apontar visualmente qual movimentação diverge.'],
+ ['RF23','sim','Exportar a cadeia com o resultado da verificação em PDF e CSV.','O relatório abre na tela e o CSV pode ser copiado; downloads são bloqueados nesta prévia.'],
+ ['RF24','real','API documentada e acessível via Swagger UI.']]]];
+const RNF=[
+ ['RNF01','ok','Interface responsiva para campo (celular e tablet) e laboratório (desktop).'],
+ ['RNF02','real','API com autenticação JWT.'],
+ ['RNF03','sim','Log append-only: nenhuma movimentação é editada ou excluída depois de criada.','A interface não oferece edição; a garantia real precisa estar no backend e no banco.'],
+ ['RNF04','real','SHA-256 calculado no backend, a partir dos dados reais do registro, nunca confiado ao cliente.'],
+ ['RNF05','ok','Número do lacre único e gerado pelo backend, nunca informado manualmente.','Vale para lacres do Instituto; o RF05d abre exceção para lacres externos.'],
+ ['RNF05b','ok','Leitura de QR exige HTTPS; a digitação do número sempre existe como alternativa.'],
+ ['RNF06','ok','Tratar erros e devolver mensagens claras.'],
+ ['RNF07','real','README com instruções de instalação e execução.'],
+ ['RNF08','real','Deploy em nuvem (Railway, Render, Vercel ou similar), com URL pública.']];
+const SUG=[
+ ['RNF-S1','real','Data e hora de cada movimentação definidas pelo servidor, não pelo relógio do dispositivo.'],
+ ['RNF-S2','real','Regras de setor e perfil validadas no backend em toda requisição; esconder o botão na tela não basta.'],
+ ['RNF-S3','real','Imutabilidade garantida no banco: usuário da aplicação sem permissão de UPDATE e DELETE na tabela da cadeia.'],
+ ['RNF-S4','real','Senhas guardadas com hash forte (bcrypt ou Argon2) e token JWT com expiração curta.'],
+ ['RNF-S5','real','Todo tráfego em HTTPS, inclusive upload de fotos.'],
+ ['RNF-S6','real','Backup diário do banco e das fotos, com teste de restauração.'],
+ ['RNF-S7','real','Registro de quem consultou cada evidência, para atender à LGPD e a auditorias.'],
+ ['RNF-S8','real','Verificação de uma cadeia com 1.000 registros concluída em até 2 segundos.'],
+ ['RNF-S9','ok','Contraste, foco visível e uso por teclado no nível AA da WCAG.']];
+const INC=[
+ ['ID RF02b usado duas vezes','Um trata da geolocalização no cadastro, o outro do pop-up de ocorrência.','renumerar o primeiro, por exemplo para RF02f.'],
+ ['Ação "Transferido"','O RF13g a remove, mas RF08c e RF12c ainda a descrevem.','apagar as menções em RF08c e RF12c.'],
+ ['Número de lacre digitado','O RNF05 diz que nunca é informado manualmente; RF05 e RF05d permitem digitar.','restringir o RNF05 à geração de lacres do Instituto.'],
+ ['Geolocalização','A arquitetura afirma que não há requisito de geolocalização; RF02b, RF13c e RF13f exigem a Geolocation API.','manter os requisitos e corrigir a nota da arquitetura: não há mapa, mas há captura de coordenadas.'],
+ ['Perfis de acesso','O RF16 define três perfis; a tabela de escopo cita dois. O RF16 também fala em "gerenciar tipos", fora do MVP.','adotar os três perfis e tirar "tipos" do RF16.'],
+ ['Ações no banco','O campo acao de CadeiaCustodia lista cinco valores e não inclui "em análise", "devolvido" nem os eventos de lacre.','ampliar o enum e acrescentar campos de localização ao registro.'],
+ ['Documento incompleto','O texto termina no meio da seção 6 e cita uma seção 11 de backlog que não está no arquivo.','conferir se há páginas faltando no PDF.']];
+
+/* ---------- diálogos ---------- */
+function modal(html,n=1){const d=$('#dlg'+n);d.innerHTML=html;if(!d.open)d.showModal()}
+function closeM(n=1){const d=$('#dlg'+n);if(d.open)d.close()}
+function ferr(f,msg){const p=f.querySelector('.err');p.textContent=msg;p.hidden=false;p.scrollIntoView({block:'nearest'})}
+const head=(t,sub,n)=>`<div class="dh"><div><h3>${t}</h3>${sub?`<p>${sub}</p>`:''}</div><button type="button" class="x" data-a="close" data-n="${n}" aria-label="Fechar">${ic('x')}</button></div>`;
+function form(f,o){const n=o.n||1;return `<form data-f="${f}" data-id="${o.id||''}">${head(o.t,o.sub,n)}<div class="db">${o.body}<p class="err" role="alert" hidden></p></div>
+  <div class="df">${o.extra||''}<button type="button" class="btn" data-a="${o.cancelA||'close'}" data-n="${n}">${o.cancel||'Cancelar'}</button><button class="btn pri ${o.danger?'':''}">${o.ok}</button></div></form>`}
+const selSetor=(name,sel)=>`<select name="${name}" id="${name}" required>${S.setores.filter(s=>s.ativo).map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${e(s.nome)}</option>`).join('')}</select>`;
+const campoLacre=`<fieldset class="f" data-req="RF05 RF05c RF05d"><legend>Origem do lacre afixado</legend><div class="opts">
+  <label class="opt"><input type="radio" name="origem" value="instituto" checked><span>Lacre do Instituto<br><span class="hint">Etiqueta com QR code</span></span></label>
+  <label class="opt"><input type="radio" name="origem" value="externo"><span>Lacre externo<br><span class="hint">Fabricante, SENASP/MJ, SSP</span></span></label></div></fieldset>
+  <div class="two"><div class="f" data-ext hidden><label for="emissor">Emissor</label><select name="emissor" id="emissor">${Object.entries(EMISSOR).filter(([k])=>k!=='instituto').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+  <div class="f"><label for="numero">Número do lacre</label><input name="numero" id="numero" list="disp" autocomplete="off"><p class="hint" data-inst>A leitura por câmera não funciona nesta prévia. Digite o número da etiqueta.</p></div></div>
+  <datalist id="disp"></datalist>`;
+function fillDisp(){const d=$('#disp');if(d)d.innerHTML=S.lacres.filter(l=>!l.externo&&l.status==='disponivel').slice(0,30).map(l=>`<option value="${l.numero}">`).join('')}
+
+const A={
+ close:d=>closeM(+d.n||1),
+ filtro(d){ui[d.g]=d.v;render()},
+ abrir(d){ui.sel=d.id||null;if(location.hash!=='#evidencias')location.hash='evidencias';else render();window.scrollTo(0,0)},
+ lote(d){ui.lote=d.id||null;render();window.scrollTo(0,0)},
+ async reset(){try{localStorage.removeItem(KEY)}catch(_){}await seed();Object.assign(ui,{sel:null,lote:null,evf:'',q:'',fs:'',fe:''});render();toast('Dados de exemplo restaurados.')},
+ nova(){
+  draftOc=null;const n=String(S.evidencias.length+1).padStart(4,'0');
+  modal(form('nova',{t:'Registrar evidência',sub:'A movimentação "Coletado" é criada automaticamente ao salvar.',ok:'Registrar evidência',body:`
+   <p class="fs">Identificação</p>
+   <div class="two"><div class="f"><label for="codigo">Código</label><input name="codigo" id="codigo" value="EV-2026-${n}" required></div>
+   <div class="f"><label for="tipo">Tipo</label><select name="tipo" id="tipo">${TIPOS.map(t=>`<option>${t}</option>`).join('')}</select></div></div>
+   <div class="f"><label for="descricao">Descrição</label><input name="descricao" id="descricao" required></div>
+   <div class="f" data-req="RF03"><label for="foto">Foto da evidência</label><input type="file" name="foto" id="foto" accept="image/*"><p class="hint">O SHA-256 do arquivo é calculado ao salvar. Opcional neste protótipo.</p></div>
+   <p class="fs">Local da coleta</p>
+   <div class="f"><label for="endereco">Endereço onde foi encontrada</label><input name="endereco" id="endereco" required></div>
+   <fieldset class="f" data-req="RF02b"><legend>Você está no local indicado no endereço?</legend><div class="opts">
+    <label class="opt"><input type="radio" name="fora" value="nao" checked><span>Sim, estou no local</span></label>
+    <label class="opt"><input type="radio" name="fora" value="sim"><span>Não, cadastro de outro lugar</span></label></div></fieldset>
+   <div class="f" data-just hidden data-req="RF02b"><label for="justificativa">Por que o cadastro está sendo feito fora do local?</label><textarea name="justificativa" id="justificativa"></textarea><p class="hint">Fica gravado de forma permanente na movimentação "Coletado".</p></div>
+   <p class="fs">Lacre</p>${campoLacre}
+   <p class="fs">Ocorrência</p>
+   <div class="ocbox" data-req="RF02b-oc RF02c RF02d RF02e"><span id="ocres" class="muted">Nenhuma ocorrência vinculada</span><button type="button" class="btn" data-a="oc">${ic('link')}Vincular ocorrência</button></div>`}));fillDisp();
+ },
+ oc(){const d=draftOc||{};
+  modal(form('oc',{n:2,t:'Vincular ocorrência',sub:'Todos os campos são opcionais. Se o código GIGANTE já existir, a evidência entra na mesma ocorrência.',ok:'Usar estes dados',body:`
+   <div class="two"><div class="f" data-req="RF02c RF02d"><label for="gigante">Código GIGANTE/SSP</label><input name="gigante" id="gigante" value="${e(d.gigante)}" list="gigs"><datalist id="gigs">${S.ocorrencias.filter(o=>o.gigante).map(o=>`<option value="${e(o.gigante)}">`).join('')}</datalist></div>
+   <div class="f"><label for="oficio">Nº de ofício</label><input name="oficio" id="oficio" value="${e(d.oficio)}"></div>
+   <div class="f"><label for="delegacia">Delegacia de origem</label><input name="delegacia" id="delegacia" value="${e(d.delegacia)}"></div>
+   <div class="f"><label for="crime">Tipo de crime</label><select name="crime" id="crime"><option value="">Não informado</option>${CRIMES.map(c=>`<option ${d.crime===c?'selected':''}>${c}</option>`).join('')}</select></div></div>
+   <div class="f"><label for="bos">B.O.(s)</label><input name="bos" id="bos" value="${e(d.bos)}"><p class="hint">Separe vários números com vírgula.</p></div>
+   <div class="f"><label for="ocend">Endereço da ocorrência</label><input name="endereco" id="ocend" value="${e(d.endereco)}"></div>
+   <div class="f"><label for="ocobs">Observações</label><textarea name="obs" id="ocobs">${e(d.obs)}</textarea></div>`}),2)},
+ gerar(){modal(form('gerar',{t:'Gerar lote de lacres',sub:'Os lacres nascem disponíveis, numerados pelo sistema e sem vínculo com evidência.',ok:'Gerar lote',body:`<div class="f" data-req="RF04 RF04b"><label for="qtd">Quantidade</label><select name="qtd" id="qtd"><option>10</option><option>50</option><option>100</option></select></div>`}))},
+ setor(d){const s=setor(d.id);modal(form('setor',{id:d.id,t:s?'Editar setor':'Novo setor',ok:'Salvar setor',extra:s?`<button type="button" class="btn danger" data-a="rmsetor" data-id="${s.id}" style="margin-right:auto">Remover setor</button>`:'',body:`
+   <div class="f"><label for="nome">Nome</label><input name="nome" id="nome" value="${e(s?.nome)}" required></div>
+   <label class="opt"><input type="checkbox" name="ativo" ${!s||s.ativo?'checked':''}><span>Setor ativo<br><span class="hint">Aparece no encaminhamento e no cadastro de usuários</span></span></label><div style="height:10px"></div>`}))},
+ rmsetor(d){const f=$('#dlg1 form');if(S.users.some(u=>u.setorId===d.id))return ferr(f,'Há pessoas vinculadas a este setor. Mova-as antes de remover, ou apenas desative o setor.');
+  if(S.evidencias.some(x=>x.setorAtualId===d.id||x.setorPendenteId===d.id)||Object.values(S.cadeia).some(c=>c.some(r=>r.setorId===d.id)))return ferr(f,'Este setor aparece em cadeias de custódia. Ele pode ser desativado, mas não removido.');
+  S.setores=S.setores.filter(s=>s.id!==d.id);closeM();render();toast('Setor removido.')},
+ lacre(d){modal(form('lacre',{id:d.id,t:'Associar lacre',sub:'Associe o lacre que já está afixado no invólucro. O sistema não gera lacre novo neste momento.',ok:'Associar lacre',body:campoLacre}));fillDisp()},
+ romper(d){const l=lacreAtivo(evById(d.id));modal(form('romper',{id:d.id,t:`Registrar rompimento do lacre ${e(l.numero)}`,ok:'Registrar rompimento',body:`<p class="warn">Depois do rompimento, a evidência fica bloqueada até um novo lacre ser associado.</p>
+   <div class="f"><label for="rresp">Responsável</label><input id="rresp" value="${e(me().nome)}" disabled></div>
+   <div class="f" data-req="RF07"><label for="motivo">Motivo do rompimento</label><textarea name="motivo" id="motivo" required></textarea></div>`}))},
+ ref(d){modal(form('ref',{id:d.id,t:'Referência de lacre externo',sub:'Para lacres de outras instituições que já estão na evidência. Fica como registro histórico, ligado ao lacre do Instituto.',ok:'Adicionar referência',body:`
+   <div class="two"><div class="f"><label for="remissor">Emissor</label><select name="emissor" id="remissor">${Object.entries(EMISSOR).filter(([k])=>k!=='instituto').map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>
+   <div class="f"><label for="rnum">Número</label><input name="numero" id="rnum" required></div></div>
+   <div class="f"><label for="robs">Observação</label><input name="obs" id="robs"></div>`}))},
+ encaminhar(d){modal(form('encaminhar',{id:d.id,t:'Encaminhar evidência',sub:'A evidência fica em trânsito, sem responsável individual, até alguém do destino confirmar o recebimento.',ok:'Encaminhar',body:`
+   <fieldset class="f" data-req="RF08b RF13b"><legend>Destino</legend><div class="opts"><label class="opt"><input type="radio" name="tipo" value="interno" checked><span>Setor do Instituto</span></label><label class="opt"><input type="radio" name="tipo" value="externo"><span>Destino externo</span></label></div></fieldset>
+   <div class="f" data-int><label for="setorId">Setor de destino</label>${selSetor('setorId')}</div>
+   <div class="two" data-ext hidden><div class="f"><label for="xnome">Nome do destino</label><input name="nome" id="xnome" placeholder="Ex.: 1º DIP"></div><div class="f"><label for="xend">Endereço</label><input name="endereco" id="xend"></div></div>
+   <div class="f" data-req="RF13"><label for="transp">Quem transporta</label><input name="transportador" id="transp" value="${e(me().nome)}" required></div>
+   <div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea></div>`}))},
+ armazenar(d){modal(form('armazenar',{id:d.id,t:'Armazenar evidência',ok:'Armazenar',body:`<div class="f"><label for="setorId">Setor de armazenamento</label>${selSetor('setorId',S.setores.find(s=>/dep/i.test(s.nome))?.id)}</div>
+   <div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs" placeholder="Ex.: prateleira, armário"></textarea></div>`}))},
+ devolver(d){modal(form('devolver',{id:d.id,t:'Registrar devolução',ok:'Registrar devolução',body:`<p class="warn">A devolução encerra a posse do Instituto. Depois dela não há novas movimentações.</p>
+   <div class="f" data-req="RF13e"><label for="para">Devolvida a quem, e onde</label><input name="para" id="para" required placeholder="Ex.: 1º DIP, Av. Brasil, 300"></div>
+   <div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea></div>`}))},
+ receber:d=>simples(d.id,'receber',evById(d.id).destinoExterno?'Confirmar chegada ao destino externo':'Confirmar recebimento',evById(d.id).destinoExterno?'A chegada a um destino externo não inicia o ciclo de análise.':`Você passa a constar como quem recebeu a evidência no setor ${sn(me().setorId)}. Receber não significa que você fará a análise.`),
+ assumir:d=>simples(d.id,'assumir','Assumir análise','A evidência passa a "Em análise" em seu nome. Só você poderá concluir.'),
+ concluir:d=>simples(d.id,'concluir','Concluir análise','A evidência passa a "Analisado".'),
+ async verificar(){const ev=evById(ui.sel),c=S.cadeia[ev.id],itens={};
+  for(let i=0;i<c.length;i++){const r=c[i],calc=await hashRec(r),elo=r.hashAnterior===(i?c[i-1].hashRegistro:ZERO);itens[r.seq]={ok:calc===r.hashRegistro&&elo,elo,calc}}
+  S.verif[ev.id]={em:new Date().toISOString(),itens};render();
+  const bad=Object.values(itens).filter(x=>!x.ok).length;toast(bad?'Divergência encontrada na cadeia.':'Cadeia íntegra.')},
+ adulterar(){const ev=evById(ui.sel),c=S.cadeia[ev.id];modal(form('adulterar',{t:'Simular adulteração',sub:'Imita alguém alterando um registro direto no banco, por fora do sistema. O hash guardado não muda, e a próxima verificação deve apontar o registro.',ok:'Alterar registro',body:`
+   <div class="f"><label for="seq">Registro a alterar</label><select name="seq" id="seq">${c.map(r=>`<option value="${r.seq}">${r.seq}. ${e(r.acao)}, ${e(r.responsavel)}</option>`).join('')}</select></div>
+   <div class="f"><label for="resp">Trocar o responsável para</label><input name="resp" id="resp" value="Outra Pessoa" required></div>`}))},
+ relatorio(){const ev=evById(ui.sel),c=S.cadeia[ev.id],v=S.verif[ev.id];
+  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+  const csv=['seq;acao;responsavel;setor;destino;local;data_hora;observacao;localizacao;hash_anterior;hash_registro;verificacao'].concat(c.map(r=>[r.seq,q(r.acao),q(r.responsavel),q(r.setorId?sn(r.setorId):''),q(r.destino),q(r.local),r.dataHora,q(r.observacao),q(r.geo),r.hashAnterior,r.hashRegistro,v&&v.itens[r.seq]?(v.itens[r.seq].ok?'confere':'DIVERGENTE'):'nao verificado'].join(';'))).join('\n');
+  const bad=v?Object.values(v.itens).filter(x=>!x.ok).length:0;
+  modal(`<div class="dwrap">${head('Relatório de custódia',e(ev.codigo)+', '+e(ev.descricao),1)}<div class="db">
+   <dl class="kv" style="margin:0 0 16px;padding:0;border:0;grid-template-columns:1fr 1fr"><div><dt>Situação</dt><dd>${STATUS[ev.status][0]}${bloqueada(ev)?', sem lacre ativo':''}</dd></div>
+   <div><dt>Integridade</dt><dd>${v?(bad?`${bad} registro(s) divergente(s)`:'Cadeia íntegra')+', '+fmt(v.em):'Ainda não verificada'}</dd></div></dl>
+   ${v?'':'<p class="warn">Feche e use "Verificar integridade" para incluir o resultado no relatório.</p>'}
+   <div class="tw" style="border:1px solid var(--line);border-radius:10px"><table><thead><tr><th>Nº</th><th>Ação</th><th>Responsável</th><th>Data</th><th>Hash</th></tr></thead><tbody>${c.map(r=>`<tr><td>${r.seq}</td><td>${e(r.acao)}</td><td>${e(r.responsavel)}</td><td class="small">${fmt(r.dataHora)}</td><td class="mono">${short(r.hashRegistro)}</td></tr>`).join('')}</tbody></table></div>
+   <div class="f" style="margin:16px 0 0"><label for="csv">CSV completo</label><textarea id="csv" readonly rows="4" class="mono">${e(csv)}</textarea><p class="hint">Download e PDF estão desligados nesta prévia. Copie o CSV e cole em uma planilha.</p></div></div>
+   <div class="df"><button class="btn" data-a="close">Fechar</button><button class="btn pri" data-a="copiar" data-req="RF23">Copiar CSV</button></div></div>`)},
+ async copiar(){const t=$('#csv');try{await navigator.clipboard.writeText(t.value);toast('CSV copiado.')}catch(_){t.select();toast('Não foi possível copiar sozinho. O texto está selecionado: use Ctrl+C.')}},
+ async semOc(){closeM(2);await salvarNova(true)},
+ naoTransp(){closeM();render()}
+};
+function simples(id,f,titulo,texto){modal(form(f,{id,t:titulo,sub:texto,ok:titulo,body:`<div class="f"><label for="obs">Observação</label><textarea name="obs" id="obs"></textarea><p class="hint">${GEO}; o registro guarda essa informação.</p></div>`}))}
+
+async function salvarNova(confirmado){
+  const f=$('#dlg1 form'),d=Object.fromEntries(new FormData(f)),u=me();
+  if(S.evidencias.some(x=>x.codigo.toLowerCase()===d.codigo.trim().toLowerCase()))return ferr(f,`Já existe uma evidência com o código ${d.codigo}.`);
+  if(d.fora==='sim'&&!d.justificativa.trim())return ferr(f,'Explique por que o cadastro está sendo feito fora do local indicado.');
+  const ext=d.origem==='externo',num=d.numero.trim();
+  if(num){
+    if(ext){if(S.lacres.some(x=>x.numero.toLowerCase()===num.toLowerCase()))return ferr(f,`O lacre ${num} já foi registrado em outra evidência e não pode ser reaproveitado.`)}
+    else{const l=S.lacres.find(x=>!x.externo&&x.numero.toLowerCase()===num.toLowerCase());
+      if(!l)return ferr(f,`Não existe lacre do Instituto com o número ${num}. Confira a etiqueta ou marque "Lacre externo".`);
+      if(l.status==='vinculado')return ferr(f,`O lacre ${l.numero} já está vinculado à evidência ${evById(l.evidenciaId)?.codigo}.`);
+      if(l.status==='rompido')return ferr(f,`O lacre ${l.numero} foi rompido e não pode ser reutilizado.`)}
+  }
+  const temOc=draftOc&&Object.values(draftOc).some(v=>String(v||'').trim());
+  if(!temOc&&!confirmado)return modal(`<div class="dwrap">${head('Registrar sem ocorrência?','',2)}<div class="db"><p>Nenhum dado de ocorrência foi informado. Você pode voltar e vincular agora, ou continuar assim mesmo.</p></div><div class="df"><button class="btn" data-a="close" data-n="2">Voltar ao formulário</button><button class="btn pri" data-a="semOc" data-req="RF02e">Registrar sem ocorrência</button></div></div>`,2);
+  const file=f.foto.files[0];let hashFoto='',fotoNome='';
+  if(file){hashFoto=hex(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()));fotoNome=file.name}
+  const ev=await novaEvidencia(u,{codigo:d.codigo.trim(),tipo:d.tipo,descricao:d.descricao.trim(),endereco:d.endereco.trim(),ocorrenciaId:vincularOcorrencia(draftOc,u),hashFoto,fotoNome,fora:d.fora==='sim',justificativa:(d.justificativa||'').trim()});
+  if(num)await opAssociar(ev,u,{externo:ext,emissor:d.emissor,numero:num});
+  ui.sel=ev.id;save();
+  modal(form('transp',{id:ev.id,t:`Evidência ${e(ev.codigo)} registrada`,sub:'Ela está sendo transportada agora?',ok:'Sim, registrar encaminhamento',cancel:'Não, ela fica comigo',cancelA:'naoTransp',body:`
+   <div class="f" data-req="RF12b"><label for="transp">Quem transporta</label><input name="transportador" id="transp" value="${e(u.nome)}" required></div>
+   <div class="f"><label for="setorId">Para qual setor</label>${selSetor('setorId',S.setores.find(s=>/recep/i.test(s.nome))?.id)}</div>`}));
+}
+
+const F={
+ nova:()=>salvarNova(false),
+ oc(d){draftOc=d;closeM(2);const t=[d.gigante&&'GIGANTE '+d.gigante,d.bos,d.delegacia].filter(Boolean).join(', ');const el=$('#ocres');el.textContent=t||(Object.values(d).some(v=>v.trim())?'Dados de ocorrência informados':'Nenhuma ocorrência vinculada');el.className=t?'':'muted';
+   const ex=d.gigante&&S.ocorrencias.find(o=>o.gigante.toLowerCase()===d.gigante.trim().toLowerCase());if(ex)toast('Código GIGANTE já cadastrado: a evidência entrará na ocorrência existente.')},
+ async transp(d,f){await opEncaminhar(evById(f.dataset.id),me(),{setorId:d.setorId,transportador:d.transportador});done('Encaminhamento registrado.')},
+ gerar(d){if(me().papel!=='admin')return;const id=novoLote(me(),+d.qtd);ui.lote=id;done(`Lote ${id} gerado com ${d.qtd} lacres.`)},
+ setor(d,f){const nome=d.nome.trim(),id=f.dataset.id;if(S.setores.some(s=>s.id!==id&&s.nome.toLowerCase()===nome.toLowerCase()))return ferr(f,'Já existe um setor com esse nome.');
+   if(id)Object.assign(setor(id),{nome,ativo:!!d.ativo});else S.setores.push({id:'s'+(++S.seq)+'n',nome,ativo:!!d.ativo});done('Setor salvo.')},
+ async lacre(d,f){const err=await opAssociar(evById(f.dataset.id),me(),{externo:d.origem==='externo',emissor:d.emissor,numero:d.numero});if(err)return ferr(f,err);done('Lacre associado.')},
+ async romper(d,f){await opRomper(evById(f.dataset.id),me(),d.motivo.trim());done('Rompimento registrado. Associe um novo lacre para liberar a evidência.')},
+ ref(d,f){S.lacres.find(l=>l.id===f.dataset.id).refs.push({emissor:d.emissor,numero:d.numero.trim(),obs:d.obs.trim(),por:me().nome,em:new Date().toISOString()});done('Referência adicionada.')},
+ async encaminhar(d,f){const ext=d.tipo==='externo';if(ext&&(!d.nome.trim()||!d.endereco.trim()))return ferr(f,'Informe o nome e o endereço do destino externo.');
+   await opEncaminhar(evById(f.dataset.id),me(),{externo:ext,nome:d.nome.trim(),endereco:d.endereco.trim(),setorId:d.setorId,transportador:d.transportador.trim(),obs:d.obs.trim()});done('Evidência encaminhada. Ela está em trânsito.')},
+ async armazenar(d,f){await opArmazenar(evById(f.dataset.id),me(),d.setorId,d.obs.trim());done('Armazenamento registrado.')},
+ async devolver(d,f){await opDevolver(evById(f.dataset.id),me(),d.para.trim(),d.obs.trim());done('Devolução registrada.')},
+ async receber(d,f){await opReceber(evById(f.dataset.id),me(),d.obs.trim());done('Recebimento confirmado.')},
+ async assumir(d,f){await opAssumir(evById(f.dataset.id),me(),d.obs.trim());done('Análise assumida.')},
+ async concluir(d,f){await opConcluir(evById(f.dataset.id),me(),d.obs.trim());done('Análise concluída.')},
+ adulterar(d){const r=S.cadeia[ui.sel].find(x=>x.seq===+d.seq);r.responsavel=d.resp.trim();done(`Registro ${r.seq} alterado por fora do sistema. Agora verifique a integridade.`)}
+};
+function done(msg){closeM(2);closeM();render();toast(msg)}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b||b.disabled)return;const fn=A[b.dataset.a];if(fn){ev.preventDefault();fn(b.dataset)}});
+document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.matches('tr.go')){ev.preventDefault();ev.target.click()}});
+document.addEventListener('submit',async ev=>{ev.preventDefault();const f=ev.target,fn=F[f.dataset.f];if(!fn)return;const btn=f.querySelector('.btn.pri');if(btn)btn.disabled=true;
+  try{await fn(Object.fromEntries(new FormData(f)),f)}catch(x){const p=f.querySelector('.err');if(p)ferr(f,'Não foi possível concluir: '+x.message)}finally{if(btn&&btn.isConnected)btn.disabled=false}});
+document.addEventListener('input',ev=>{const t=ev.target;if(!t.dataset.q)return;ui[t.dataset.q]=t.value;
+  if(t.dataset.q==='q')$('#evrows').innerHTML=evRows();else $('#reqlist').innerHTML=reqList()});
+document.addEventListener('change',ev=>{const t=ev.target,f=t.form;
+  if(t.id==='user'){S.me=t.value;render();toast(`Agora você é ${me().nome}, ${PERFIL[me().papel]}, ${sn(me().setorId)}.`)}
+  if(t.dataset.c){ui[t.dataset.c]=t.value;render()}
+  if(t.name==='origem'){const x=t.value==='externo';f.querySelector('[data-ext]').hidden=!x;f.querySelector('[data-inst]').hidden=x;f.numero.setAttribute('list',x?'':'disp')}
+  if(t.name==='fora')f.querySelector('[data-just]').hidden=t.value!=='sim';
+  if(t.name==='tipo'&&f&&f.dataset.f==='encaminhar'){const x=t.value==='externo';f.querySelector('[data-ext]').hidden=!x;f.querySelector('[data-int]').hidden=x}
+});
+/* caixa de requisito: aparece ao passar o mouse ou focar, some ao sair */
+const tip=document.createElement('div');tip.id='tip';tip.setAttribute('role','tooltip');
+let tipEl=null,tipT=null;
+function tipShow(el){
+  const ids=(el.dataset.req||'').split(/\s+/).filter(Boolean);if(!ids.length)return;
+  tip.innerHTML=ids.map(k=>`<div><b>${e(k.split('-')[0])}</b><span>${e(SHORT[k]||'')}</span></div>`).join('');
+  (el.closest('dialog')||document.body).append(tip);
+  const r=el.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
+  let y=r.top-h-8;if(y<8)y=r.bottom+8;
+  const x=Math.max(8,Math.min(r.left+r.width/2-w/2,innerWidth-w-8));
+  tip.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;tip.classList.add('on');
+}
+function tipHide(){clearTimeout(tipT);tipEl=null;tip.classList.remove('on')}
+document.addEventListener('mouseover',ev=>{const el=ev.target.closest&&ev.target.closest('[data-req]');if(el===tipEl)return;tipHide();if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}});
+document.addEventListener('mouseout',ev=>{if(!ev.relatedTarget)tipHide()});
+document.addEventListener('focusin',ev=>{const el=ev.target.closest('[data-req]');tipHide();if(el&&ev.target.matches(':focus-visible')){tipEl=el;tipShow(el)}});
+document.addEventListener('focusout',tipHide);
+document.addEventListener('click',tipHide,true);
+document.addEventListener('scroll',tipHide,true);
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')tipHide()});
+window.addEventListener('hashchange',()=>{render();window.scrollTo(0,0)});
+
+const NAV=[['evidencias','Evidências','box','RF02 RF20'],['lacres','Lacres','tag','RF04 RF06b'],['setores','Setores e usuários','users','RF10 RF11 RF16'],['requisitos','Requisitos','list','']];
+function chrome(v){
+  const bl=S.evidencias.filter(bloqueada).length,u=me();
+  const cnt={evidencias:bl?`<em class="hot">${bl}</em>`:`<em>${S.evidencias.length}</em>`,lacres:`<em>${S.lacres.filter(l=>l.status==='disponivel').length}</em>`};
+  $('#nav').innerHTML=NAV.map(n=>`<a href="#${n[0]}"${rq(n[3])} ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1]}${cnt[n[0]]||''}</a>`).join('');
+  $('#tabbar').innerHTML=NAV.map(n=>`<a href="#${n[0]}" ${n[0]===v?'aria-current="page"':''}>${ic(n[2])}${n[1].split(' ')[0]}</a>`).join('');
+  $('#me').innerHTML=`${av(u)}<div><b>${e(u.nome)}</b><span>${PERFIL[u.papel]}, ${e(sn(u.setorId))}</span></div>`;
+  $('#user').innerHTML=S.users.map(x=>`<option value="${x.id}" ${x.id===S.me?'selected':''}>${e(x.nome)} (${PERFIL[x.papel]}, ${e(sn(x.setorId))})</option>`).join('');
+  $('.reset').innerHTML=ic('refresh')+'Restaurar dados de exemplo';
+  $('#proto').innerHTML=ic('info')+'<span>Protótipo: os dados ficam só neste navegador. Câmera, GPS, PDF e login com senha estão simulados; o hash SHA-256 é real.</span>';
+}
+function render(){
+  save();let v=location.hash.slice(1);if(!views[v])v='evidencias';
+  chrome(v);$('#main').innerHTML=views[v]();
+}
+(async()=>{
+  if(!window.crypto||!crypto.subtle){$('#main').innerHTML='<p class="err">Este navegador não oferece SHA-256 (Web Crypto). Abra a página em um navegador atual, por HTTPS.</p>';return}
+  try{S=JSON.parse(localStorage.getItem(KEY))}catch(_){S=null}
+  if(!S||!S.evidencias||S.evidencias.length<4&&!S.v2){await seed()}
+  S.v2=1;render();
+})();
+</script>
+</body>
+</html>
