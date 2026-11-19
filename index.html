@@ -2305,7 +2305,7 @@ var qrcode = function() {
 }));
 </script>
 <style>
-:root{
+:root{color-scheme:light;
   --bg:#F3F5F8; --card:#fff; --ink:#0E1A2B; --text:#1B2A3D; --muted:#5A6A7D; --faint:#8593A3;
   --line:#E2E7ED; --line2:#C9D2DC; --soft:#F6F8FA;
   --pri:#1D4ED8; --pri-h:#173FB3; --pri-bg:#E9EFFF;
@@ -2529,7 +2529,7 @@ details summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--pri)
 .req .pill{justify-self:end}
 
 /* diálogos */
-dialog{border:0;border-radius:14px;padding:0;width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 24px);color:var(--text);box-shadow:0 24px 64px rgba(14,26,43,.35);overflow:hidden}
+dialog{background:#fff;border:0;border-radius:14px;padding:0;width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 24px);color:var(--text);box-shadow:0 24px 64px rgba(14,26,43,.35);overflow:hidden}
 dialog[open]{display:flex}
 dialog::backdrop{background:rgba(14,26,43,.55)}
 dialog form,dialog .dwrap{display:flex;flex-direction:column;min-height:0;width:100%}
@@ -2558,6 +2558,12 @@ fieldset.f{border:0;padding:0;margin:0 0 14px}
 .ocbox{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px dashed var(--line2);border-radius:10px;padding:12px 14px}
 #tip{position:fixed;z-index:300;left:0;top:0;max-width:360px;background:var(--ink);color:#fff;border-radius:8px;padding:8px 11px;font-size:.8rem;line-height:1.35;pointer-events:none;box-shadow:0 8px 24px rgba(14,26,43,.28);opacity:0;transition:opacity .12s ease}
 #tip.on{opacity:1}
+#tip p.td{margin:0;font-size:.82rem;line-height:1.4;color:#fff;max-width:330px}
+#tip p.td+div{margin-top:7px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}
+.ferr{color:var(--red-ink);font-size:.82rem;margin:5px 0 0;display:flex;gap:5px;align-items:center}
+.ferr::before{content:"!";display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.66rem;font-weight:700;flex:none}
+[aria-invalid=true]{border-color:var(--red)!important;box-shadow:0 0 0 3px var(--red-bg)}
+.btn[aria-busy=true]{opacity:.75;cursor:progress}
 #tip div{display:flex;gap:9px;align-items:baseline}
 #tip div+div{margin-top:3px}
 #tip b{font-family:var(--mono);font-weight:600;color:#A9C1FF;white-space:nowrap;min-width:44px}
@@ -3151,11 +3157,12 @@ const INC=[
  ['Documento incompleto','O texto termina no meio da seção 6 e cita uma seção 11 de backlog que não está no arquivo.','conferir se há páginas faltando no PDF.']];
 
 /* ---------- diálogos ---------- */
-function modal(html,n=1){const d=$('#dlg'+n);d.innerHTML=html;if(!d.open)d.showModal()}
+function modal(html,n=1){const d=$('#dlg'+n);d.innerHTML=html;if(!d.open)d.showModal();const fi=d.querySelector('.db input:not([type=radio]):not([type=checkbox]):not([type=file]):not([readonly]),.db select,.db textarea');if(fi){semTip=true;fi.focus();semTip=false}}
+let semTip=false;
 function closeM(n=1){const d=$('#dlg'+n);if(d.open)d.close()}
 function ferr(f,msg){const p=f.querySelector('.err');p.textContent=msg;p.hidden=false;p.scrollIntoView({block:'nearest'})}
 const head=(t,sub,n)=>`<div class="dh"><div><h3>${t}</h3>${sub?`<p>${sub}</p>`:''}</div><button type="button" class="x" data-a="close" data-n="${n}" aria-label="Fechar">${ic('x')}</button></div>`;
-function form(f,o){const n=o.n||1;return `<form data-f="${f}" data-id="${o.id||''}">${head(o.t,o.sub,n)}<div class="db">${o.body}<p class="err" role="alert" hidden></p></div>
+function form(f,o){const n=o.n||1;return `<form novalidate data-f="${f}" data-id="${o.id||''}">${head(o.t,o.sub,n)}<div class="db">${o.body}<p class="err" role="alert" hidden></p></div>
   <div class="df">${o.extra||''}<button type="button" class="btn" data-a="${o.cancelA||'close'}" data-n="${n}">${o.cancel||'Cancelar'}</button><button class="btn pri ${o.danger?'':''}">${o.ok}</button></div></form>`}
 const selSetor=(name,sel)=>`<select name="${name}" id="${name}" required>${S.setores.filter(s=>s.ativo).map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${e(s.nome)}</option>`).join('')}</select>`;
 const campoLacre=`<fieldset class="f" data-req="RF05 RF05c RF05d" data-db="lacre.emissor"><legend>Origem do lacre afixado</legend><div class="opts">
@@ -3170,7 +3177,7 @@ const A={
  close:d=>closeM(+d.n||1),
  sair(){revogarToken(me());S.logado=false;render();window.scrollTo(0,0);toast('Você saiu. O token foi revogado.')},
  entrarcomo(d){entrarComo(user(d.id))},
- versenha(){const i=$('#lgpw'),b=i.nextElementSibling,v=i.type==='password';i.type=v?'text':'password';b.setAttribute('aria-label',v?'Ocultar senha':'Mostrar senha')},
+ versenha(d){const i=$('#'+(d.for||'lgpw')),b=i.nextElementSibling,v=i.type==='password';i.type=v?'text':'password';b.setAttribute('aria-label',v?'Ocultar senha':'Mostrar senha')},
  esqueci(){toast('Peça a redefinição ao administrador do seu setor.')},
  filtro(d){ui[d.g]=d.v;render()},
  abrir(d){ui.sel=d.id||null;if(location.hash!=='#evidencias')location.hash='evidencias';else render();window.scrollTo(0,0)},
@@ -3210,12 +3217,12 @@ const A={
    <label class="opt" data-req="RF10" data-db="setor.ativo"><input type="checkbox" name="ativo" ${!s||s.ativo?'checked':''}><span>Setor ativo<br><span class="hint">Aparece no encaminhamento e no cadastro de usuários</span></span></label><div style="height:10px"></div>`}))},
  pessoa(d){if(me().papel!=='admin')return;const u=d.id?user(d.id):null,eu=u&&u.id===S.me;
   modal(form('pessoa',{id:d.id,t:u?'Editar pessoa':'Nova pessoa',sub:u?'Mudar perfil ou setor gera um token novo e revoga o anterior.':'Ao cadastrar, o sistema gera o token de acesso (JWT) desta pessoa.',ok:u?'Salvar alterações':'Cadastrar e gerar token',body:`
-   <div class="f" data-req="RF01" data-db="usuario.nome"><label for="pnome">Nome completo</label><input name="nome" id="pnome" value="${e(u?.nome)}" required minlength="2" maxlength="160" autocomplete="off"></div>
-   <div class="two"><div class="f" data-req="RF01" data-db="usuario.matricula"><label for="pmat">Matrícula</label><input name="matricula" id="pmat" value="${e(u?.matricula)}" required inputmode="numeric" autocomplete="off"></div>
-   <div class="f" data-req="RF01" data-db="usuario.email"><label for="pmail">E-mail de acesso</label><input type="email" name="email" id="pmail" value="${e(u?.email)}" required autocomplete="off"></div></div>
+   <div class="f" data-req="RF01" data-db="usuario.nome"><label for="pnome">Nome completo</label><input name="nome" id="pnome" value="${e(u?.nome)}" placeholder="Ex.: Paula Andrade" required minlength="2" maxlength="160" autocomplete="off"></div>
+   <div class="two"><div class="f" data-req="RF01" data-db="usuario.matricula"><label for="pmat">Matrícula</label><input name="matricula" id="pmat" value="${e(u?.matricula)}" placeholder="Ex.: 4100" required inputmode="numeric" autocomplete="off"></div>
+   <div class="f" data-req="RF01" data-db="usuario.email"><label for="pmail">E-mail de acesso</label><input type="email" name="email" id="pmail" value="${e(u?.email)}" placeholder="nome@ic.gov.br" required autocomplete="off"></div></div>
    <div class="two"><div class="f" data-req="RF16" data-db="usuario.perfil"><label for="pperfil">Perfil</label><select name="papel" id="pperfil">${Object.entries(PERFIL).map(([k,v])=>`<option value="${k}" ${(u?.papel||'normal')===k?'selected':''}>${v}</option>`).join('')}</select></div>
    <div class="f" data-req="RF11" data-db="usuario.setor_id"><label for="setorId">Setor</label>${selSetor('setorId',u?.setorId)}</div></div>
-   <div class="f" data-req="RF01 RNF-S4" data-db="usuario.senha_hash"><label for="psenha">${u?'Nova senha':'Senha inicial'}</label><input type="password" name="senha" id="psenha" minlength="8" ${u?'':'required'} autocomplete="new-password"><p class="hint">${u?'Deixe em branco para manter a atual. ':''}Mínimo de 8 caracteres. Só o hash da senha é guardado.</p></div>
+   <div class="f" data-req="RF01 RNF-S4" data-db="usuario.senha_hash"><label for="psenha">${u?'Nova senha':'Senha inicial'}</label><div class="pw"><input type="password" name="senha" id="psenha" minlength="8" ${u?'':'required'} autocomplete="new-password"><button type="button" data-a="versenha" data-for="psenha" aria-label="Mostrar senha">${ic('eye')}</button></div><p class="hint">${u?'Deixe em branco para manter a atual. ':''}Mínimo de 8 caracteres. Só o hash da senha é guardado.</p></div>
    ${u?`<label class="opt" data-req="RF01" data-db="usuario.ativo"><input type="checkbox" name="ativo" ${u.ativo!==false?'checked':''} ${eu?'disabled':''}><span>Pessoa ativa<br><span class="hint">${eu?'Você não pode desativar a si mesma.':'Desativar revoga o token e impede o login.'}</span></span></label><div style="height:10px"></div>`:''}`}))},
  token(d){const u=user(d.id),t=u.token,adm=me().papel==='admin';if(!adm&&u.id!==S.me)return;const p=t?lerToken(t.valor):null,[th,tp,ts]=t?t.valor.split('.'):[],nrev=(S.revogados||[]).filter(r=>r.usuarioId===u.id).length;
   modal(`<div>${head(d.novo?`${e(u.nome)} cadastrada`:`Token de ${e(u.nome)}`,d.novo?`Token de acesso gerado. Ele expira em ${TOKEN_HORAS} horas.`:'Token JWT usado para acessar a API.',1)}<div class="db">
@@ -3344,9 +3351,20 @@ function done(msg){closeM(2);closeM();render();toast(msg)}
 /* ---------- eventos ---------- */
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-a]');if(!b||b.disabled)return;const fn=A[b.dataset.a];if(fn){ev.preventDefault();fn(b.dataset)}});
 document.addEventListener('keydown',ev=>{if(ev.key==='Enter'&&ev.target.matches('tr.go')){ev.preventDefault();ev.target.click()}});
-document.addEventListener('submit',async ev=>{ev.preventDefault();const f=ev.target,fn=F[f.dataset.f];if(!fn)return;const btn=f.querySelector('.btn.pri');if(btn)btn.disabled=true;
-  try{await fn(Object.fromEntries(new FormData(f)),f)}catch(x){const p=f.querySelector('.err');if(p)ferr(f,'Não foi possível concluir: '+x.message)}finally{if(btn&&btn.isConnected)btn.disabled=false}});
-document.addEventListener('input',ev=>{const t=ev.target;if(!t.dataset.q)return;ui[t.dataset.q]=t.value;
+function msgVal(x){const v=x.validity,l=(x.form.querySelector(`label[for="${x.id}"]`)?.textContent||x.closest('fieldset')?.querySelector('legend')?.textContent||'este campo').trim();
+  if(v.valueMissing)return x.type==='radio'?'Escolha uma opção.':x.tagName==='SELECT'?`Escolha ${l.toLowerCase()}.`:`Preencha "${l}".`;
+  if(v.typeMismatch&&x.type==='email')return 'Digite um e-mail válido, como nome@ic.gov.br.';
+  if(v.tooShort)return `Use ao menos ${x.minLength} caracteres (você digitou ${x.value.length}).`;
+  if(v.tooLong)return `Use no máximo ${x.maxLength} caracteres.`;
+  if(v.patternMismatch)return x.title||'Formato inválido.';return x.validationMessage}
+function limparErro(x){x.removeAttribute('aria-invalid');const box=x.closest('.f,fieldset')||x.parentElement,m=box&&box.querySelector(':scope>.ferr');if(m)m.remove()}
+function validar(f){f.querySelectorAll('.ferr').forEach(m=>m.remove());f.querySelectorAll('[aria-invalid]').forEach(x=>x.removeAttribute('aria-invalid'));
+  const vistos=new Set(),bad=[...f.elements].filter(x=>x.willValidate&&!x.checkValidity()&&!(x.type==='radio'&&vistos.has(x.name)||(x.type==='radio'&&vistos.add(x.name),false)));
+  bad.forEach(x=>{x.setAttribute('aria-invalid','true');const box=x.closest('.f,fieldset')||x.parentElement,m=document.createElement('p');m.className='ferr';m.id='e-'+(x.id||x.name);m.textContent=msgVal(x);box.append(m);x.setAttribute('aria-describedby',m.id)});
+  if(bad.length){bad[0].focus();return false}return true}
+document.addEventListener('submit',async ev=>{ev.preventDefault();const f=ev.target,fn=F[f.dataset.f];if(!fn)return;if(f.noValidate&&!validar(f))return;const btn=f.querySelector('.btn.pri');if(btn){btn.disabled=true;btn.setAttribute('aria-busy','true')}
+  try{await fn(Object.fromEntries(new FormData(f)),f)}catch(x){const p=f.querySelector('.err');if(p)ferr(f,'Não foi possível concluir: '+x.message)}finally{if(btn&&btn.isConnected){btn.disabled=false;btn.removeAttribute('aria-busy')}}});
+document.addEventListener('input',ev=>{const t=ev.target;if(t.getAttribute&&t.getAttribute('aria-invalid'))limparErro(t);if(t.type==='radio'&&t.form)t.form.querySelectorAll(`[name="${t.name}"]`).forEach(limparErro);if(!t.dataset.q)return;ui[t.dataset.q]=t.value;
   if(t.dataset.q==='q')$('#evrows').innerHTML=evRows();else if(t.dataset.q==='dq'){const v=views.banco(),m=v.match(/<div id="dblist">([\s\S]*)<\/div>$/);$('#dblist').innerHTML=m?m[1]:''}else $('#reqlist').innerHTML=reqList()});
 document.addEventListener('change',ev=>{const t=ev.target,f=t.form;
   if(t.id==='user'){S.me=t.value;if(!tokenValido(me()))emitirToken(me()).then(render);render();toast(`Agora você é ${me().nome}, ${PERFIL[me().papel]}, ${sn(me().setorId)}.`)}
@@ -3359,10 +3377,42 @@ document.addEventListener('change',ev=>{const t=ev.target,f=t.form;
 /* caixa de requisito: aparece ao passar o mouse ou focar, some ao sair */
 const tip=document.createElement('div');tip.id='tip';tip.setAttribute('role','tooltip');
 let tipEl=null,tipT=null;
+const TIPA={close:'Fecha esta janela sem gravar nada.',sair:'Encerra sua sessão e revoga o seu token de acesso.',
+ entrarcomo:b=>`Entra direto como ${user(b.dataset.id)?.nome}, sem digitar senha.`,versenha:'Mostra ou esconde a senha digitada.',esqueci:'A senha é redefinida pelo administrador do seu setor.',
+ filtro:'Mostra só as evidências nesta situação.',abrir:'Abre os detalhes e a cadeia de custódia desta evidência.',
+ lote:b=>b.dataset.id?'Abre o lote e a folha de etiquetas para impressão.':'Volta para a lista de lotes.',reset:'Apaga o que você alterou e volta aos dados de exemplo.',
+ nova:'Abre o formulário para registrar uma evidência coletada.',oc:'Abre a janela para informar GIGANTE, B.O., ofício e delegacia.',
+ gerar:'Gera um lote de lacres numerados com QR code. Só administradores.',
+ setor:b=>b.dataset.id?'Muda o nome ou desativa este setor.':'Cadastra um novo setor do Instituto. Só administradores.',
+ pessoa:b=>b.dataset.id?'Muda os dados, o perfil, o setor ou desativa esta pessoa.':'Cadastra uma pessoa e gera o token de acesso dela. Só administradores.',
+ token:'Mostra o token JWT desta pessoa e até quando ele vale.',novotoken:'Gera outro token e revoga o atual. Use se o token vazou.',copiartoken:'Copia o token para colar em outro lugar.',
+ rmsetor:'Apaga o setor. Só funciona se não houver pessoas nele e se ele nunca apareceu numa cadeia.',
+ lacre:'Vincula à evidência um lacre que já está afixado nela.',romper:'Registra que o lacre foi rompido. A evidência fica bloqueada até receber outro lacre.',
+ ref:'Registra um lacre de outra instituição que já estava na evidência.',encaminhar:'Envia a evidência a um setor ou a um destino externo. Ela fica em trânsito.',
+ armazenar:'Guarda a evidência num setor de armazenamento.',devolver:'Registra a devolução e encerra a posse do Instituto.',
+ receber:'Confirma que a evidência chegou ao seu setor. Receber não é analisar.',assumir:'Torna você o perito responsável pela análise.',concluir:'Encerra a análise. Só quem assumiu pode concluir.',
+ verificar:'Recalcula o hash de cada registro e aponta qualquer alteração.',adulterar:'Simula alguém mudando um registro direto no banco, para testar a verificação.',
+ relatorio:'Gera o relatório da cadeia com o resultado da última verificação.',copiar:'Copia o CSV para colar numa planilha.',
+ semOc:'Registra a evidência sem ocorrência vinculada.',naoTransp:'A evidência fica com você; nenhum encaminhamento é registrado.'};
+const TIPF={nova:'Grava a evidência e cria a movimentação "Coletado".',entrar:'Entra no sistema e gera seu token de acesso.',oc:'Usa estes dados de ocorrência no cadastro.',
+ transp:'Registra o encaminhamento para o setor escolhido.',gerar:'Cria o lote; os lacres nascem disponíveis.',setor:'Grava o setor.',pessoa:'Grava a pessoa. No cadastro, gera o token de acesso.',
+ lacre:'Vincula o lacre e grava a movimentação na cadeia.',romper:'Grava o rompimento na cadeia. Não pode ser desfeito.',ref:'Grava a referência ao lacre externo.',
+ encaminhar:'Grava o encaminhamento; a evidência fica em trânsito.',armazenar:'Grava o armazenamento na cadeia.',devolver:'Grava a devolução e encerra a posse.',
+ receber:'Grava o recebimento no seu setor.',assumir:'Grava "Em análise" com você como responsável.',concluir:'Grava "Analisado" na cadeia.',adulterar:'Muda o registro por fora, sem recalcular o hash.'};
+const FREQ={pessoa:'RF01 RF11 RF16 RNF-S4',setor:'RF10',nova:'RF02 RF03 RF08c',gerar:'RF04 RF04b',oc:'RF02b-oc RF02c RF02d',transp:'RF12 RF12b',ref:'RF04e',adulterar:'RF21 RF22',rmsetor:'RF10',novotoken:'RF01 RNF02',token:'RF01 RNF02'};
+function tipInfo(el){
+  const b=el.matches('button')?el:el.querySelector(':scope>button');
+  let src=el;if(b&&!b.dataset.req&&!b.dataset.db){const p=b.parentElement;if(p&&(p.dataset.req||p.dataset.db)&&p.children.length===1)src=p}
+  let req=src.dataset.req||'',db=src.dataset.db||'',t=el.dataset.tip||'';
+  if(b){const a=b.dataset.a,fm=b.closest('form'),sub=!a&&fm&&b.type==='submit';
+    t=b.dataset.tip||(typeof TIPA[a]==='function'?TIPA[a](b):TIPA[a])||(sub?TIPF[fm.dataset.f]:'')||'';
+    const k=sub?fm.dataset.f:a;if(!req&&(ACTREQ[k]||FREQ[k]))req=ACTREQ[k]||FREQ[k];if(!db&&ACTDB[k])db=ACTDB[k];
+    if(b.disabled&&b.dataset.why)t+=(t?' ':'')+b.dataset.why}
+  return {t,req,db}}
 function tipShow(el){
-  const ids=(el.dataset.req||'').split(/\s+/).filter(Boolean),dbs=(el.dataset.db||'').split(/\s+/).filter(Boolean);if(!ids.length&&!dbs.length)return;
+  const I=tipInfo(el),ids=I.req.split(/\s+/).filter(Boolean),dbs=I.db.split(/\s+/).filter(Boolean);if(!ids.length&&!dbs.length&&!I.t)return;
   const dbl=dbs.map(k=>{const[t,c]=k.split('.');if(!DBD[t])return '';if(!c)return `<div class="dbl"><code>tabela ${e(t)}</code><span>${e(curto(DBD[t]._[0]))}</span></div>`;const v=DBD[t][c];return v?`<div class="dbl"><code>${e(t)}.${e(c)}</code><span>${e(curto(v[2]))}</span></div>`:''}).join('');
-  tip.innerHTML=ids.map(k=>`<div><b>${e(k.replace(/-oc$/,''))}</b><span>${e(SHORT[k]||'')}</span></div>`).join('')+(dbl?`<div class="${ids.length?'tdb':'tdb0'}"><div class="tl1">No banco de dados</div>${dbl}</div>`:'');
+  tip.innerHTML=(I.t?`<p class="td">${e(I.t)}</p>`:'')+(ids.length?'<div style="display:block">':'')+ids.map(k=>`<div><b>${e(k.replace(/-oc$/,''))}</b><span>${e(SHORT[k]||'')}</span></div>`).join('')+(ids.length?'</div>':'')+(dbl?`<div class="${ids.length?'tdb':'tdb0'}"><div class="tl1">No banco de dados</div>${dbl}</div>`:'');
   (el.closest('dialog')||document.body).append(tip);
   const r=el.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
   let y=r.top-h-8;if(y<8)y=r.bottom+8;
@@ -3370,10 +3420,11 @@ function tipShow(el){
   tip.style.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;tip.classList.add('on');
 }
 function tipHide(){clearTimeout(tipT);tipEl=null;tip.classList.remove('on')}
-document.addEventListener('mouseover',ev=>{const el=ev.target.closest&&ev.target.closest('[data-req],[data-db]');if(el===tipEl)return;tipHide();if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}});
+const TSEL='button,[data-req],[data-db],[data-tip]';
+document.addEventListener('mouseover',ev=>{const el=ev.target.closest&&ev.target.closest(TSEL);if(el===tipEl)return;tipHide();if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}});
 document.addEventListener('mouseout',ev=>{if(!ev.relatedTarget)tipHide()});
-document.addEventListener('mousemove',ev=>{if(tipEl)return;const el=ev.target.closest&&ev.target.closest('[data-req],[data-db]');if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}},{passive:true});
-document.addEventListener('focusin',ev=>{const el=ev.target.closest('[data-req],[data-db]');tipHide();if(el&&ev.target.matches(':focus-visible')){tipEl=el;tipShow(el)}});
+document.addEventListener('mousemove',ev=>{if(tipEl)return;const el=ev.target.closest&&ev.target.closest(TSEL);if(el){tipEl=el;tipT=setTimeout(()=>tipShow(el),120)}},{passive:true});
+document.addEventListener('focusin',ev=>{const el=ev.target.closest(TSEL);tipHide();if(el&&!semTip&&ev.target.matches(':focus-visible')){tipEl=el;tipShow(el)}});
 document.addEventListener('focusout',tipHide);
 document.addEventListener('click',tipHide,true);
 document.addEventListener('scroll',tipHide,true);
