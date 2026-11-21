@@ -10,7 +10,7 @@ Protótipo navegável do MVP de cadeia de custódia (Desafio 4). Roda inteiro no
 - Hash chain SHA-256 real, verificação de integridade e simulação de adulteração.
 - Lotes de lacres com QR code (como administrador).
 - Aba de requisitos com os RF/RNF levantados e as colunas do banco que atendem cada um.
-- Aba "Banco de dados" com as 13 tabelas e 129 colunas, o tipo, a descrição e os requisitos de cada coluna.
+- Aba "Banco de dados" com as 13 tabelas e 128 colunas, o tipo, se é obrigatória, a descrição e os requisitos de cada coluna.
 - Passe o mouse sobre qualquer funcionalidade ou campo para ver os IDs dos requisitos e as colunas do banco (`tabela.coluna`) envolvidas.
 
 ## Limitações da demo
@@ -21,7 +21,7 @@ Protótipo navegável do MVP de cadeia de custódia (Desafio 4). Roda inteiro no
 
 ## Banco de dados
 
-A pasta `database/` tem o esquema PostgreSQL do sistema real (`schema.sql`) e os testes (`testes.sql`, 34 casos). Cada tabela e coluna tem um comentário no próprio banco com a descrição e os requisitos atendidos: no psql, `\d+ custodia.evidencia`. A pasta não é publicada na Vercel.
+A pasta `database/` tem o esquema PostgreSQL do sistema real (`schema.sql`) e os testes (`testes.sql`, 40 casos). Cada tabela e coluna tem um comentário no próprio banco com a descrição e os requisitos atendidos: no psql, `\d+ custodia.evidencia`. Listas fixas (perfil, situação, tipo...) são `varchar(30)` com restrição `CHECK`, textos com limite natural são `varchar(n)` e datas são `timestamp with time zone`; o dicionário de dados explica o porquê de cada tipo. A pasta não é publicada na Vercel.
 
 ## Rodar localmente
 

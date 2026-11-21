@@ -49,6 +49,9 @@ SELECT pg_temp.espera_erro($$INSERT INTO usuario (nome, matricula, email, senha_
 SELECT pg_temp.espera_erro($$INSERT INTO usuario (nome, matricula, email, senha_hash, setor_id) VALUES ('Xavier Lima', '9', 'x@ic.gov.br', 'senha123', '00000000-0000-0000-0000-0000000000a1')$$,
   'senha_hash', 'senha em texto puro é recusada');
 SELECT pg_temp.espera_erro($$INSERT INTO setor (nome) VALUES ('recepção ')$$, 'setor_nome_uk', 'setor com nome repetido é recusado');
+SELECT pg_temp.espera_erro($$INSERT INTO setor (nome) VALUES (repeat('a', 121))$$, 'value too long', 'nome de setor acima de 120 caracteres é recusado (varchar(120))');
+SELECT pg_temp.espera_erro($$INSERT INTO usuario (nome, matricula, email, senha_hash, perfil, setor_id) VALUES ('Xavier Lima', '9', 'x@ic.gov.br', '$2b$12$a', 'chefe', '00000000-0000-0000-0000-0000000000a1')$$,
+  'usuario_perfil_valores', 'perfil fora da lista é recusado (RF16)');
 
 -- ---------------------------------------------------------------- lotes de lacre
 SELECT pg_temp.espera_erro($$SELECT gerar_lote_lacres(10, '00000000-0000-0000-0000-0000000000b2')$$,
@@ -61,14 +64,16 @@ SELECT pg_temp.espera_erro($$INSERT INTO lacre (numero_lacre, emissor, lote_id) 
 SELECT pg_temp.espera_erro($$DELETE FROM lacre$$, 'permission denied', 'API não apaga lacres');
 
 -- ---------------------------------------------------------------- ocorrência
-INSERT INTO ocorrencia (id, codigo_gigante, delegacia_origem, tipo_crime, data_hora_ocorrencia, criada_por_id)
+INSERT INTO ocorrencia (id, codigo_gigante, delegacia_origem, tipo_crime, data_hora_ocorrencia, criado_por_id)
 VALUES ('00000000-0000-0000-0000-0000000000c1', 'GIG-2026-004417', '1º DIP', 'homicidio', '2026-11-10 21:00-04', '00000000-0000-0000-0000-0000000000b2');
 INSERT INTO ocorrencia_bo (ocorrencia_id, numero_bo, adicionado_por_id)
 VALUES ('00000000-0000-0000-0000-0000000000c1', 'BO 2026/118.332', '00000000-0000-0000-0000-0000000000b2');
-SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (codigo_gigante, criada_por_id) VALUES ('gig-2026-004417', '00000000-0000-0000-0000-0000000000b2')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (codigo_gigante, criado_por_id) VALUES ('gig-2026-004417', '00000000-0000-0000-0000-0000000000b2')$$,
   'ocorrencia_gigante_uk', 'código GIGANTE repetido é recusado (RF02c)');
-SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (criada_por_id) VALUES ('00000000-0000-0000-0000-0000000000b2')$$,
+SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (criado_por_id) VALUES ('00000000-0000-0000-0000-0000000000b2')$$,
   'ocorrencia_nao_vazia', 'ocorrência vazia é recusada (RF02e)');
+SELECT pg_temp.espera_erro($$INSERT INTO ocorrencia (tipo_crime, criado_por_id) VALUES ('estelionato', '00000000-0000-0000-0000-0000000000b2')$$,
+  'ocorrencia_tipo_crime_valores', 'tipo de crime fora da lista é recusado');
 
 -- ---------------------------------------------------------------- evidência + coleta
 INSERT INTO evidencia (id, codigo, tipo_evidencia, descricao, endereco_coleta, latitude_coleta, longitude_coleta, ocorrencia_id,
@@ -100,6 +105,13 @@ UPDATE lacre SET situacao = 'vinculado', evidencia_id = '00000000-0000-0000-0000
 INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse, lacre_id)
 SELECT '00000000-0000-0000-0000-0000000000e1', 'lacre_associado', '00000000-0000-0000-0000-0000000000b2', 'Rafael Souza', id
   FROM lacre WHERE numero_lacre LIKE '%-000001';
+
+SELECT pg_temp.espera_erro($$INSERT INTO evidencia (codigo, tipo_evidencia, descricao, endereco_coleta, foto_caminho_arquivo, foto_nome_arquivo, foto_tipo_arquivo, foto_tamanho_bytes, foto_hash_sha256, coletado_por_id) VALUES ('EV-X', 'veiculo', 'x', 'Rua B', 'a', 'a.jpg', 'image/jpeg', 1, repeat('a', 64), '00000000-0000-0000-0000-0000000000b2')$$,
+  'evidencia_tipo_evidencia_valores', 'tipo de evidência fora da lista é recusado (RF02)');
+SELECT pg_temp.espera_erro($$UPDATE evidencia SET foto_nome_arquivo = 'outra.jpg' WHERE id = '00000000-0000-0000-0000-0000000000e1'$$,
+  'não podem ser alterados', 'dados da foto não mudam depois do cadastro (RF03)');
+SELECT pg_temp.espera_erro($$INSERT INTO cadeia_custodia (evidencia_id, acao, registrado_por_id, nome_responsavel_posse) VALUES ('00000000-0000-0000-0000-0000000000e1', 'transferido', '00000000-0000-0000-0000-0000000000b2', 'X')$$,
+  'cadeia_acao_valores', 'ação "transferido" não existe (RF13g)');
 
 -- Segunda evidência tenta usar o mesmo lacre (RF05c)
 INSERT INTO evidencia (id, codigo, tipo_evidencia, descricao, endereco_coleta, foto_caminho_arquivo, foto_nome_arquivo, foto_tipo_arquivo, foto_tamanho_bytes, foto_hash_sha256, coletado_por_id)
@@ -192,6 +204,7 @@ SET ROLE custodia_app;
 SELECT verificar_cadeia('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000b4') AS vid \gset
 SELECT pg_temp.ok((SELECT NOT v.cadeia_integra AND v.registros_divergentes = 1
                           AND d.numero_sequencia = 3 AND d.tipo_divergencia = 'conteudo_alterado'
+                          AND d.cadeia_custodia_id IS NOT NULL AND d.hash_armazenado <> d.hash_recalculado
                      FROM verificacao_integridade v JOIN verificacao_divergencia d ON d.verificacao_id = v.id
                     WHERE v.id = :'vid'),
                   'adulteração é apontada no registro exato (RF22)');
